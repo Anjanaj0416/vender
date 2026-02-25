@@ -39,6 +39,7 @@ import {
   useGetVendorProductsQuery,
   useUpdateProductVariantMutation,
 } from "services/vendor-api";
+import ReplayIcon from "@mui/icons-material/Replay";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -810,7 +811,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                   { label: "Price (LKR)", minWidth: 260 },
                   { label: "Discount",    minWidth: 200 },
                   { label: "Status",      minWidth: 130 },
-                  { label: "Actions",     minWidth: 210, align: "right" as const },
+                  { label: "Actions",     minWidth: 100, align: "right" as const },
                 ].map((col) => (
                   <TableCell
                     key={col.label} align={col.align}
@@ -1002,19 +1003,30 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                         >
                           Save
                         </LoadingButton>
-                        <Button
-                          size="small" variant="outlined" disabled={isSaving}
-                          onClick={() => patchState(variant.id, defaults, {
-                            newStock:      defaults.units,
-                            newPrice:      defaults.price,
-                            discountType:  defaults.discountType,
-                            discountValue: defaults.discount,
-                            status: "idle",
-                          })}
-                          sx={{ fontWeight: 800 }}
-                        >
-                          Reset
-                        </Button>
+                        <IconButton
+  size="small"
+  disabled={isSaving || !changed}
+  onClick={() => patchState(variant.id, defaults, {
+    newStock:      defaults.units,
+    newPrice:      defaults.price,
+    discountType:  defaults.discountType,
+    discountValue: defaults.discount,
+    status: "idle",
+  })}
+  title="Reset changes"
+  sx={{
+    border: "1px solid",
+    borderColor: isSaving || !changed ? "divider" : "error.main",
+    color: isSaving || !changed ? "text.disabled" : "error.main",
+    "&:hover": {
+      bgcolor: "error.main",
+      color: "#fff",
+      borderColor: "error.main",
+    },
+  }}
+>
+  <ReplayIcon fontSize="small" />
+</IconButton>
                       </FlexBox>
                     </TableCell>
 
