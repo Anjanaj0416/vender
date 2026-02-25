@@ -6,7 +6,7 @@ import { ReduxProvider } from "./redux/provider";
 
 const theme = createTheme({
   palette: {
-    primary: { main: "#2563eb" },
+    primary: { main: "#dc2626" },
     success: { main: "#16a34a" },
     warning: { main: "#d97706" },
     error:   { main: "#dc2626" },
