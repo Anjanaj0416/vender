@@ -33,7 +33,7 @@ const MOCK_PRODUCTS: MockProduct[] = [
   {
     id: "P001",
     name: "Wireless Noise-Cancelling Headphones",
-    images: [],
+    images: ["https://images.philips.com/is/image/philipsconsumer/491e2dd5e0d1466f8ee5b0cd010451ae?wid=700&hei=700&$pnglarge$"],
     minPrice: 12500,
     maxPrice: 14000,
     brand: "Sony",

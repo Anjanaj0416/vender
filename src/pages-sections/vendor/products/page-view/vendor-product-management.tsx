@@ -271,11 +271,11 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   );
 
   const patchState = useCallback(
-    (variantId: string, patch: Partial<RowState>) =>
+    (variantId: string, defaults: { units: number; price: number }, patch: Partial<RowState>) =>
       setRowStates((prev) => {
         const existing = prev[variantId] ?? {
-          newStock: 0,
-          newPrice: 0,
+          newStock: defaults.units,
+          newPrice: defaults.price,
           discountType: "%" as DiscountType,
           discountValue: 0,
           status: "idle" as const,
@@ -291,7 +291,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const isChanged = useCallback(
     (variant: ProductVariant) => {
       const s = getState(variant);
-      return s.newStock !== variant.units || s.newPrice !== variant.price;
+      return s.newStock !== variant.units || s.newPrice !== variant.price || s.discountValue > 0;
     },
     [getState]
   );
@@ -301,7 +301,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const saveRow = useCallback(
     async (product: Product1, variant: ProductVariant) => {
       const s = getState(variant);
-      patchState(variant.id, { status: "saving" });
+      patchState(variant.id, { units: variant.units, price: variant.price }, { status: "saving" });
       try {
         await updateVariant({
           userId,
@@ -319,7 +319,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
         enqueueSnackbar(`"${product.name}" saved successfully`, { variant: "success" });
       } catch {
-        patchState(variant.id, { status: "error" });
+        patchState(variant.id, { units: variant.units, price: variant.price }, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
       }
     },
@@ -500,7 +500,6 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               <TableRow sx={{ bgcolor: "grey.50" }}>
                 {[
                   { label: "Product",     minWidth: 280 },
-                  { label: "SKU",         minWidth: 110 },
                   { label: "Stock",       minWidth: 220 },
                   { label: "Price (LKR)", minWidth: 260 },
                   { label: "Discount",    minWidth: 220 },
@@ -530,7 +529,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               {isLoading &&
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(7)].map((__, j) => (
+                    {[...Array(6)].map((__, j) => (
                       <TableCell key={j}>
                         <Skeleton variant="rounded" height={36} />
                       </TableCell>
@@ -541,7 +540,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               {/* Empty state */}
               {!isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
                     <Paragraph color="text.disabled" fontWeight={700}>
                       No products found.
                     </Paragraph>
@@ -557,7 +556,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                   const isSaving = s.status === "saving";
                   const chip     = STATUS_CHIP[s.status];
 
-                  // Compute discounted price preview (based on original variant.price as base)
+                  // Compute discounted price preview — display only, does NOT affect newPrice
                   const discountedPreview =
                     s.discountValue > 0
                       ? applyDiscount(variant.price, s.discountType, s.discountValue)
@@ -577,15 +576,10 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                               {product.name}
                             </H6>
                             <Small color="text.disabled" fontWeight={700}>
-                              {variant.attributes?.map((a) => a.value).join(" / ") || "Default"}
+                              {variant.sku ?? "—"}
                             </Small>
                           </Box>
                         </FlexBox>
-                      </TableCell>
-
-                      {/* SKU */}
-                      <TableCell>
-                        <Span fontWeight={800} fontSize={13}>{variant.sku ?? "—"}</Span>
                       </TableCell>
 
                       {/* Stock */}
@@ -621,7 +615,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                               value={s.newStock}
                               slotProps={{ htmlInput: { min: 0, step: 1 } }}
                               onChange={(e) =>
-                                patchState(variant.id, {
+                                patchState(variant.id, { units: variant.units, price: variant.price }, {
                                   newStock: Math.max(0, Number(e.target.value)),
                                   newPrice: s.newPrice,
                                   status: "edited",
@@ -674,11 +668,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                                 },
                               }}
                               onChange={(e) =>
-                                patchState(variant.id, {
+                                patchState(variant.id, { units: variant.units, price: variant.price }, {
                                   newStock: s.newStock,
                                   newPrice: Math.max(0, Number(e.target.value)),
-                                  // Clear discount when price is manually changed
-                                  discountValue: 0,
                                   status: "edited",
                                 })
                               }
@@ -697,13 +689,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                             size="small"
                             value={s.discountType}
                             onChange={(_, val) => {
-                              if (!val) return; // don't allow deselect
-                              // Recompute price with new type, keep same discountValue
-                              const newP = applyDiscount(variant.price, val as DiscountType, s.discountValue);
-                              patchState(variant.id, {
+                              if (!val) return;
+                              patchState(variant.id, { units: variant.units, price: variant.price }, {
                                 discountType: val as DiscountType,
-                                newPrice: s.discountValue > 0 ? newP : s.newPrice,
-                                status: s.discountValue > 0 ? "edited" : s.status,
                               });
                             }}
                             sx={{ mb: 0.75, "& .MuiToggleButton-root": { py: 0.3, px: 1, fontWeight: 800, fontSize: 11 } }}
@@ -737,11 +725,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                             }}
                             onChange={(e) => {
                               const val = Math.max(0, Number(e.target.value));
-                              const newP = applyDiscount(variant.price, s.discountType, val);
-                              patchState(variant.id, {
+                              patchState(variant.id, { units: variant.units, price: variant.price }, {
                                 discountValue: val,
-                                newPrice: newP,
-                                status: "edited",
+                                status: val > 0 ? "edited" : s.status,
                               });
                             }}
                             sx={{ width: 110 }}
@@ -793,7 +779,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                             size="small" variant="outlined"
                             disabled={isSaving}
                             onClick={() =>
-                              patchState(variant.id, {
+                              patchState(variant.id, { units: variant.units, price: variant.price }, {
                                 newStock: variant.units,
                                 newPrice: variant.price,
                                 discountType: "%",
