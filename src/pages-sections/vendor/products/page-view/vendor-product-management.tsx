@@ -22,6 +22,8 @@ import Grid from "@mui/material/Grid";
 import Popper from "@mui/material/Popper";
 import Paper from "@mui/material/Paper";
 import Fade from "@mui/material/Fade";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import SearchIcon from "@mui/icons-material/Search";
 import ImageIcon from "@mui/icons-material/Image";
 import { LoadingButton } from "@mui/lab";
@@ -36,9 +38,13 @@ import {
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
+type DiscountType = "%" | "LKR";
+
 interface RowState {
   newStock: number;
   newPrice: number;
+  discountType: DiscountType;
+  discountValue: number;
   status: "idle" | "edited" | "saving" | "saved" | "error";
 }
 
@@ -56,160 +62,93 @@ const STATUS_CHIP: Record<
   idle:   { label: "No changes", color: "default" },
   edited: { label: "Edited",     color: "warning"  },
   saving: { label: "Saving…",    color: "info"     },
-  saved:  { label: "Saved ✓",    color: "success"  },
+  saved:  { label: "Saved",      color: "success"  },
   error:  { label: "Error",      color: "error"    },
 };
 
-// ─── Stat card ──────────────────────────────────────────────────────────────────
+// ─── Helper: apply discount to base price ──────────────────────────────────────
 
-const StatCard = ({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) => (
-  <Card
-    sx={{
-      p: 2.5,
-      borderRadius: 3,
-      border: "1px solid",
-      borderColor: "divider",
-      boxShadow: "none",
-    }}
-  >
-    <H3 color={color} mb={0.25}>
-      {value}
-    </H3>
-    <Small color="text.secondary" fontWeight={700}>
-      {label}
-    </Small>
-  </Card>
-);
+function applyDiscount(basePrice: number, type: DiscountType, value: number): number {
+  if (!value || value <= 0) return basePrice;
+  if (type === "%") {
+    const pct = Math.min(value, 100);
+    return Math.max(0, Math.round((basePrice * (1 - pct / 100)) * 100) / 100);
+  }
+  return Math.max(0, Math.round((basePrice - value) * 100) / 100);
+}
 
-// ─── Image Hover Preview ────────────────────────────────────────────────────────
+// ─── Sub-component: product avatar with hover preview ──────────────────────────
 
-const ProductAvatarWithPreview = ({
-  product,
-  variant,
-}: {
+interface ProductAvatarWithPreviewProps {
   product: Product1;
   variant: ProductVariant;
-}) => {
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+}
 
-  const imageUrl = product.images?.[0] ?? null;
+const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreviewProps) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const imageUrl = product.images?.[0];
   const variantLabel =
     variant.attributes?.map((a) => a.value).join(" / ") || "Default";
 
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(true), 120);
+  const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.currentTarget;
+    timerRef.current = setTimeout(() => setAnchorEl(target), 250);
   };
 
   const handleMouseLeave = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setOpen(false), 80);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setAnchorEl(null);
   };
+
+  const open = Boolean(anchorEl);
 
   return (
     <>
-      <Box
-        ref={anchorRef}
+      <Avatar
+        src={imageUrl}
+        variant="rounded"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        sx={{ display: "inline-flex", cursor: "pointer", position: "relative" }}
+        sx={{
+          width: 42, height: 42,
+          bgcolor: "grey.200",
+          fontWeight: 900, fontSize: 16,
+          cursor: "default",
+          flexShrink: 0,
+          border: "1.5px solid",
+          borderColor: "divider",
+        }}
       >
-        <Avatar
-          variant="rounded"
-          src={imageUrl ?? undefined}
-          alt={product.name}
-          sx={{
-            width: 44,
-            height: 44,
-            bgcolor: "primary.50",
-            color: "primary.main",
-            fontWeight: 900,
-            fontSize: 14,
-            border: "1.5px solid",
-            borderColor: open ? "primary.main" : "divider",
-            flexShrink: 0,
-            transition: "border-color 0.15s ease, box-shadow 0.15s ease",
-            boxShadow: open
-              ? "0 0 0 3px rgba(37,99,235,0.15)"
-              : "none",
-          }}
-        >
-          {product.name.charAt(0)}
-        </Avatar>
+        {!imageUrl && (
+          product.name?.charAt(0)?.toUpperCase() || <ImageIcon fontSize="small" />
+        )}
+      </Avatar>
 
-        {/* Small zoom indicator */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: -3,
-            right: -3,
-            width: 14,
-            height: 14,
-            borderRadius: "50%",
-            bgcolor: "primary.main",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            opacity: open ? 1 : 0,
-            transform: open ? "scale(1)" : "scale(0.5)",
-            transition: "opacity 0.15s ease, transform 0.15s ease",
-            pointerEvents: "none",
-          }}
-        >
-          <Box
-            component="span"
-            sx={{ color: "#fff", fontSize: 8, fontWeight: 900, lineHeight: 1 }}
-          >
-            🔍
-          </Box>
-        </Box>
-      </Box>
-
-      <Popper
-        open={open}
-        anchorEl={anchorRef.current}
-        placement="right-start"
-        transition
-        modifiers={[{ name: "offset", options: { offset: [0, 12] } }]}
-        style={{ zIndex: 1400 }}
-      >
+      <Popper open={open} anchorEl={anchorEl} placement="right-start" transition sx={{ zIndex: 1400 }}>
         {({ TransitionProps }) => (
-          <Fade {...TransitionProps} timeout={160}>
+          <Fade {...TransitionProps} timeout={180}>
             <Paper
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              elevation={0}
+              elevation={8}
               sx={{
                 width: 220,
                 borderRadius: 3,
-                border: "1.5px solid",
-                borderColor: "divider",
                 overflow: "hidden",
-                boxShadow:
-                  "0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               {/* Image area */}
               <Box
                 sx={{
                   width: "100%",
-                  height: 180,
+                  height: 160,
+                  position: "relative",
                   bgcolor: "grey.100",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  overflow: "hidden",
-                  position: "relative",
                 }}
               >
                 {imageUrl ? (
@@ -217,44 +156,12 @@ const ProductAvatarWithPreview = ({
                     component="img"
                     src={imageUrl}
                     alt={product.name}
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      transition: "transform 0.3s ease",
-                      "&:hover": { transform: "scale(1.05)" },
-                    }}
+                    sx={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 ) : (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
-                  >
-                    {/* Large letter avatar as preview */}
-                    <Box
-                      sx={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: 2,
-                        bgcolor: "primary.main",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 32,
-                        fontWeight: 900,
-                        boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
-                      }}
-                    >
-                      {product.name.charAt(0)}
-                    </Box>
-                    <Small color="text.disabled" fontWeight={700} fontSize={11}>
-                      No image uploaded
-                    </Small>
+                  <Box sx={{ textAlign: "center", color: "text.disabled" }}>
+                    <ImageIcon sx={{ fontSize: 40, mb: 0.5 }} />
+                    <Small fontWeight={700} display="block">No image</Small>
                   </Box>
                 )}
 
@@ -263,14 +170,11 @@ const ProductAvatarWithPreview = ({
                   <Box
                     sx={{
                       position: "absolute",
-                      top: 8,
-                      left: 8,
+                      top: 8, left: 8,
                       bgcolor: "rgba(0,0,0,0.55)",
                       color: "#fff",
-                      fontSize: 10,
-                      fontWeight: 800,
-                      px: 0.75,
-                      py: 0.25,
+                      fontSize: 10, fontWeight: 800,
+                      px: 0.75, py: 0.25,
                       borderRadius: 1,
                       backdropFilter: "blur(4px)",
                       letterSpacing: ".3px",
@@ -283,13 +187,7 @@ const ProductAvatarWithPreview = ({
 
               {/* Info area */}
               <Box sx={{ p: 1.5, bgcolor: "#fff" }}>
-                <H6
-                  fontWeight={800}
-                  fontSize={12.5}
-                  noWrap
-                  title={product.name}
-                  sx={{ mb: 0.4 }}
-                >
+                <H6 fontWeight={800} fontSize={12.5} noWrap title={product.name} sx={{ mb: 0.4 }}>
                   {product.name}
                 </H6>
                 <Small color="text.secondary" fontWeight={700} display="block">
@@ -298,9 +196,7 @@ const ProductAvatarWithPreview = ({
 
                 {/* Price range */}
                 <FlexBox alignItems="center" justifyContent="space-between" mt={1}>
-                  <Small color="text.disabled" fontWeight={700} fontSize={10.5}>
-                    PRICE RANGE
-                  </Small>
+                  <Small color="text.disabled" fontWeight={700} fontSize={10.5}>PRICE RANGE</Small>
                   <Small fontWeight={800} color="primary.main" fontSize={12}>
                     LKR {product.minPrice.toLocaleString("en-LK")}
                     {product.minPrice !== product.maxPrice &&
@@ -311,18 +207,11 @@ const ProductAvatarWithPreview = ({
                 {/* Category */}
                 {product.category && (
                   <FlexBox alignItems="center" justifyContent="space-between" mt={0.5}>
-                    <Small color="text.disabled" fontWeight={700} fontSize={10.5}>
-                      CATEGORY
-                    </Small>
+                    <Small color="text.disabled" fontWeight={700} fontSize={10.5}>CATEGORY</Small>
                     <Chip
                       label={product.category.name}
                       size="small"
-                      sx={{
-                        height: 18,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        "& .MuiChip-label": { px: 0.75 },
-                      }}
+                      sx={{ height: 18, fontSize: 10, fontWeight: 800, "& .MuiChip-label": { px: 0.75 } }}
                     />
                   </FlexBox>
                 )}
@@ -334,6 +223,21 @@ const ProductAvatarWithPreview = ({
     </>
   );
 };
+
+// ─── StatCard ──────────────────────────────────────────────────────────────────
+
+const StatCard = ({ label, value, color }: { label: string; value: number; color: string }) => (
+  <Card
+    sx={{
+      p: 2, borderRadius: 3,
+      border: "1px solid", borderColor: "divider",
+      boxShadow: "none",
+    }}
+  >
+    <Span fontWeight={900} fontSize={26} color={color}>{value}</Span>
+    <Paragraph color="text.secondary" fontWeight={700} fontSize={13} mt={0.25}>{label}</Paragraph>
+  </Card>
+);
 
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
@@ -359,6 +263,8 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
       rowStates[variant.id] ?? {
         newStock: variant.units,
         newPrice: variant.price,
+        discountType: "%" as DiscountType,
+        discountValue: 0,
         status: "idle",
       },
     [rowStates]
@@ -367,7 +273,13 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const patchState = useCallback(
     (variantId: string, patch: Partial<RowState>) =>
       setRowStates((prev) => {
-        const existing = prev[variantId] ?? { newStock: 0, newPrice: 0, status: "idle" as const };
+        const existing = prev[variantId] ?? {
+          newStock: 0,
+          newPrice: 0,
+          discountType: "%" as DiscountType,
+          discountValue: 0,
+          status: "idle" as const,
+        };
         return {
           ...prev,
           [variantId]: { ...existing, ...patch } as RowState,
@@ -405,9 +317,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
           return next;
         });
 
-        enqueueSnackbar(`"${product.name}" saved successfully`, {
-          variant: "success",
-        });
+        enqueueSnackbar(`"${product.name}" saved successfully`, { variant: "success" });
       } catch {
         patchState(variant.id, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
@@ -416,7 +326,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
     [getState, patchState, updateVariant, userId, storeId, enqueueSnackbar]
   );
 
-  // ── Flat rows: one per variant ────────────────────────────────────────────────
+  // ── Flat rows ─────────────────────────────────────────────────────────────────
 
   const flatRows = useMemo(
     () =>
@@ -434,9 +344,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
       enqueueSnackbar("No changes to save.", { variant: "info" });
       return;
     }
-    await Promise.all(
-      edited.map(({ product, variant }) => saveRow(product, variant))
-    );
+    await Promise.all(edited.map(({ product, variant }) => saveRow(product, variant)));
   };
 
   // ── Discard all ───────────────────────────────────────────────────────────────
@@ -465,8 +373,6 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   }, [flatRows, search, sort]);
 
   const editedCount = flatRows.filter(({ variant }) => isChanged(variant)).length;
-
-  // ── Stats ─────────────────────────────────────────────────────────────────────
 
   const inStock    = flatRows.filter(({ variant }) => variant.units > 0).length;
   const outOfStock = flatRows.filter(({ variant }) => variant.units === 0).length;
@@ -577,7 +483,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
         </LoadingButton>
 
         <Small color="text.disabled" fontWeight={700} sx={{ width: "100%", mt: 0.5 }}>
-          Tip: Edit "New stock" or "New price" to enable Save. Hover over the product thumbnail for a larger preview.
+          Tip: Edit "New stock", "New price", or "Discount" to enable Save. Hover over the product thumbnail for a larger preview.
         </Small>
       </Card>
 
@@ -597,6 +503,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                   { label: "SKU",         minWidth: 110 },
                   { label: "Stock",       minWidth: 220 },
                   { label: "Price (LKR)", minWidth: 260 },
+                  { label: "Discount",    minWidth: 220 },
                   { label: "Status",      minWidth: 130 },
                   { label: "Actions",     minWidth: 210, align: "right" as const },
                 ].map((col) => (
@@ -623,7 +530,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               {isLoading &&
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    {[...Array(6)].map((__, j) => (
+                    {[...Array(7)].map((__, j) => (
                       <TableCell key={j}>
                         <Skeleton variant="rounded" height={36} />
                       </TableCell>
@@ -634,7 +541,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               {/* Empty state */}
               {!isLoading && rows.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                     <Paragraph color="text.disabled" fontWeight={700}>
                       No products found.
                     </Paragraph>
@@ -650,6 +557,12 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                   const isSaving = s.status === "saving";
                   const chip     = STATUS_CHIP[s.status];
 
+                  // Compute discounted price preview (based on original variant.price as base)
+                  const discountedPreview =
+                    s.discountValue > 0
+                      ? applyDiscount(variant.price, s.discountType, s.discountValue)
+                      : null;
+
                   return (
                     <TableRow
                       key={variant.id}
@@ -658,9 +571,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                       {/* Product */}
                       <TableCell>
                         <FlexBox alignItems="center" gap={1.5}>
-                          {/* ── Replaced Avatar with hover-preview component ── */}
                           <ProductAvatarWithPreview product={product} variant={variant} />
-
                           <Box overflow="hidden">
                             <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>
                               {product.name}
@@ -766,6 +677,8 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                                 patchState(variant.id, {
                                   newStock: s.newStock,
                                   newPrice: Math.max(0, Number(e.target.value)),
+                                  // Clear discount when price is manually changed
+                                  discountValue: 0,
                                   status: "edited",
                                 })
                               }
@@ -773,6 +686,80 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                             />
                           </Box>
                         </FlexBox>
+                      </TableCell>
+
+                      {/* ── Discount ── */}
+                      <TableCell>
+                        <Box>
+                          {/* Type toggle: % / LKR */}
+                          <ToggleButtonGroup
+                            exclusive
+                            size="small"
+                            value={s.discountType}
+                            onChange={(_, val) => {
+                              if (!val) return; // don't allow deselect
+                              // Recompute price with new type, keep same discountValue
+                              const newP = applyDiscount(variant.price, val as DiscountType, s.discountValue);
+                              patchState(variant.id, {
+                                discountType: val as DiscountType,
+                                newPrice: s.discountValue > 0 ? newP : s.newPrice,
+                                status: s.discountValue > 0 ? "edited" : s.status,
+                              });
+                            }}
+                            sx={{ mb: 0.75, "& .MuiToggleButton-root": { py: 0.3, px: 1, fontWeight: 800, fontSize: 11 } }}
+                          >
+                            <ToggleButton value="%">%</ToggleButton>
+                            <ToggleButton value="LKR">LKR</ToggleButton>
+                          </ToggleButtonGroup>
+
+                          {/* Discount value input */}
+                          <TextField
+                            size="small"
+                            type="number"
+                            disabled={isSaving}
+                            placeholder="0"
+                            value={s.discountValue || ""}
+                            slotProps={{
+                              htmlInput: {
+                                min: 0,
+                                max: s.discountType === "%" ? 100 : undefined,
+                                step: s.discountType === "%" ? 0.1 : 1,
+                              },
+                              input: {
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Small fontWeight={900} color="text.disabled" fontSize={11}>
+                                      {s.discountType}
+                                    </Small>
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                            onChange={(e) => {
+                              const val = Math.max(0, Number(e.target.value));
+                              const newP = applyDiscount(variant.price, s.discountType, val);
+                              patchState(variant.id, {
+                                discountValue: val,
+                                newPrice: newP,
+                                status: "edited",
+                              });
+                            }}
+                            sx={{ width: 110 }}
+                          />
+
+                          {/* Preview of discounted price */}
+                          {discountedPreview !== null && (
+                            <Small
+                              display="block"
+                              mt={0.5}
+                              fontWeight={800}
+                              color="success.main"
+                              fontSize={11}
+                            >
+                              → LKR {discountedPreview.toLocaleString("en-LK")}
+                            </Small>
+                          )}
+                        </Box>
                       </TableCell>
 
                       {/* Status */}
@@ -809,6 +796,8 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                               patchState(variant.id, {
                                 newStock: variant.units,
                                 newPrice: variant.price,
+                                discountType: "%",
+                                discountValue: 0,
                                 status: "idle",
                               })
                             }
