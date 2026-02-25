@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -19,7 +19,11 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Card from "@mui/material/Card";
 import Skeleton from "@mui/material/Skeleton";
 import Grid from "@mui/material/Grid";
+import Popper from "@mui/material/Popper";
+import Paper from "@mui/material/Paper";
+import Fade from "@mui/material/Fade";
 import SearchIcon from "@mui/icons-material/Search";
+import ImageIcon from "@mui/icons-material/Image";
 import { LoadingButton } from "@mui/lab";
 import { useSnackbar } from "notistack";
 import { H3, H6, Paragraph, Small, Span } from "components/Typography";
@@ -85,6 +89,252 @@ const StatCard = ({
   </Card>
 );
 
+// ─── Image Hover Preview ────────────────────────────────────────────────────────
+
+const ProductAvatarWithPreview = ({
+  product,
+  variant,
+}: {
+  product: Product1;
+  variant: ProductVariant;
+}) => {
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const imageUrl = product.images?.[0] ?? null;
+  const variantLabel =
+    variant.attributes?.map((a) => a.value).join(" / ") || "Default";
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setOpen(true), 120);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setOpen(false), 80);
+  };
+
+  return (
+    <>
+      <Box
+        ref={anchorRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        sx={{ display: "inline-flex", cursor: "pointer", position: "relative" }}
+      >
+        <Avatar
+          variant="rounded"
+          src={imageUrl ?? undefined}
+          alt={product.name}
+          sx={{
+            width: 44,
+            height: 44,
+            bgcolor: "primary.50",
+            color: "primary.main",
+            fontWeight: 900,
+            fontSize: 14,
+            border: "1.5px solid",
+            borderColor: open ? "primary.main" : "divider",
+            flexShrink: 0,
+            transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+            boxShadow: open
+              ? "0 0 0 3px rgba(37,99,235,0.15)"
+              : "none",
+          }}
+        >
+          {product.name.charAt(0)}
+        </Avatar>
+
+        {/* Small zoom indicator */}
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: -3,
+            right: -3,
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            bgcolor: "primary.main",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: open ? 1 : 0,
+            transform: open ? "scale(1)" : "scale(0.5)",
+            transition: "opacity 0.15s ease, transform 0.15s ease",
+            pointerEvents: "none",
+          }}
+        >
+          <Box
+            component="span"
+            sx={{ color: "#fff", fontSize: 8, fontWeight: 900, lineHeight: 1 }}
+          >
+            🔍
+          </Box>
+        </Box>
+      </Box>
+
+      <Popper
+        open={open}
+        anchorEl={anchorRef.current}
+        placement="right-start"
+        transition
+        modifiers={[{ name: "offset", options: { offset: [0, 12] } }]}
+        style={{ zIndex: 1400 }}
+      >
+        {({ TransitionProps }) => (
+          <Fade {...TransitionProps} timeout={160}>
+            <Paper
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              elevation={0}
+              sx={{
+                width: 220,
+                borderRadius: 3,
+                border: "1.5px solid",
+                borderColor: "divider",
+                overflow: "hidden",
+                boxShadow:
+                  "0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)",
+              }}
+            >
+              {/* Image area */}
+              <Box
+                sx={{
+                  width: "100%",
+                  height: 180,
+                  bgcolor: "grey.100",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                {imageUrl ? (
+                  <Box
+                    component="img"
+                    src={imageUrl}
+                    alt={product.name}
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      transition: "transform 0.3s ease",
+                      "&:hover": { transform: "scale(1.05)" },
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    {/* Large letter avatar as preview */}
+                    <Box
+                      sx={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: 2,
+                        bgcolor: "primary.main",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 32,
+                        fontWeight: 900,
+                        boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
+                      }}
+                    >
+                      {product.name.charAt(0)}
+                    </Box>
+                    <Small color="text.disabled" fontWeight={700} fontSize={11}>
+                      No image uploaded
+                    </Small>
+                  </Box>
+                )}
+
+                {/* Brand badge overlay */}
+                {product.brand && (
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 8,
+                      left: 8,
+                      bgcolor: "rgba(0,0,0,0.55)",
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      backdropFilter: "blur(4px)",
+                      letterSpacing: ".3px",
+                    }}
+                  >
+                    {product.brand}
+                  </Box>
+                )}
+              </Box>
+
+              {/* Info area */}
+              <Box sx={{ p: 1.5, bgcolor: "#fff" }}>
+                <H6
+                  fontWeight={800}
+                  fontSize={12.5}
+                  noWrap
+                  title={product.name}
+                  sx={{ mb: 0.4 }}
+                >
+                  {product.name}
+                </H6>
+                <Small color="text.secondary" fontWeight={700} display="block">
+                  {variantLabel}
+                </Small>
+
+                {/* Price range */}
+                <FlexBox alignItems="center" justifyContent="space-between" mt={1}>
+                  <Small color="text.disabled" fontWeight={700} fontSize={10.5}>
+                    PRICE RANGE
+                  </Small>
+                  <Small fontWeight={800} color="primary.main" fontSize={12}>
+                    LKR {product.minPrice.toLocaleString("en-LK")}
+                    {product.minPrice !== product.maxPrice &&
+                      ` – ${product.maxPrice.toLocaleString("en-LK")}`}
+                  </Small>
+                </FlexBox>
+
+                {/* Category */}
+                {product.category && (
+                  <FlexBox alignItems="center" justifyContent="space-between" mt={0.5}>
+                    <Small color="text.disabled" fontWeight={700} fontSize={10.5}>
+                      CATEGORY
+                    </Small>
+                    <Chip
+                      label={product.category.name}
+                      size="small"
+                      sx={{
+                        height: 18,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        "& .MuiChip-label": { px: 0.75 },
+                      }}
+                    />
+                  </FlexBox>
+                )}
+              </Box>
+            </Paper>
+          </Fade>
+        )}
+      </Popper>
+    </>
+  );
+};
+
 // ─── Main Component ─────────────────────────────────────────────────────────────
 
 const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
@@ -135,19 +385,6 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   );
 
   // ── Save single row ───────────────────────────────────────────────────────────
-  // FIX: After a successful save, we DELETE the rowState entry entirely instead
-  // of setting status → "saved" → "idle".
-  //
-  // Why this fixes the "Current value not updating" bug:
-  //   • variant.units / variant.price come from the RTK Query cache.
-  //   • invalidatesTags: ["VENDOR_PRODUCT"] triggers a refetch, which updates
-  //     the cache with the new units/price returned by the API.
-  //   • getState() falls back to { newStock: variant.units, newPrice: variant.price }
-  //     when there is NO entry in rowStates for that variantId.
-  //   • So deleting the entry lets the refreshed cache values become both the
-  //     "Current" display AND the "New" input defaults — everything stays in sync.
-  //   • Previously, keeping a stale rowState entry overrode the fresh cache data,
-  //     so "Current" appeared frozen until a hard reload.
 
   const saveRow = useCallback(
     async (product: Product1, variant: ProductVariant) => {
@@ -162,7 +399,6 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
           body: { units: s.newStock, price: s.newPrice },
         }).unwrap();
 
-        // ── Delete the rowState entry so the component re-reads fresh cache data ──
         setRowStates((prev) => {
           const next = { ...prev };
           delete next[variant.id];
@@ -341,7 +577,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
         </LoadingButton>
 
         <Small color="text.disabled" fontWeight={700} sx={{ width: "100%", mt: 0.5 }}>
-          Tip: Edit "New stock" or "New price" to enable Save.
+          Tip: Edit "New stock" or "New price" to enable Save. Hover over the product thumbnail for a larger preview.
         </Small>
       </Card>
 
@@ -422,20 +658,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                       {/* Product */}
                       <TableCell>
                         <FlexBox alignItems="center" gap={1.5}>
-                          <Avatar
-                            variant="rounded"
-                            alt={product.name}
-                            sx={{
-                              width: 44, height: 44,
-                              bgcolor: "primary.100",
-                              color: "primary.main",
-                              fontWeight: 900, fontSize: 14,
-                              border: "1px solid", borderColor: "divider",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {product.name.charAt(0)}
-                          </Avatar>
+                          {/* ── Replaced Avatar with hover-preview component ── */}
+                          <ProductAvatarWithPreview product={product} variant={variant} />
+
                           <Box overflow="hidden">
                             <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>
                               {product.name}
@@ -610,7 +835,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               Showing {rows.length} of {flatRows.length} variants
             </Small>
             <Small color="text.disabled" fontWeight={700}>
-              Tip: Edit "New stock" or "New price" to enable Save
+              Tip: Hover thumbnail for product preview
             </Small>
           </FlexBetween>
         )}
