@@ -22,8 +22,12 @@ import Grid from "@mui/material/Grid";
 import Popper from "@mui/material/Popper";
 import Paper from "@mui/material/Paper";
 import Fade from "@mui/material/Fade";
-import ToggleButton from "@mui/material/ToggleButton";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import IconButton from "@mui/material/IconButton";
+import Divider from "@mui/material/Divider";
+import EditIcon from "@mui/icons-material/Edit";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import ImageIcon from "@mui/icons-material/Image";
 import { LoadingButton } from "@mui/lab";
@@ -77,7 +81,7 @@ function applyDiscount(basePrice: number, type: DiscountType, value: number): nu
   return Math.max(0, Math.round((basePrice - value) * 100) / 100);
 }
 
-// ─── Sub-component: product avatar with hover preview ─────────────────────────
+// ─── Sub-component: product avatar with hover preview (desktop) ───────────────
 
 interface ProductAvatarWithPreviewProps {
   product: Product1;
@@ -166,6 +170,360 @@ const StatCard = ({ label, value, color }: { label: string; value: number; color
   </Card>
 );
 
+// ─── Edit Dialog (mobile popup) ────────────────────────────────────────────────
+
+interface EditDialogProps {
+  open: boolean;
+  product: Product1 | null;
+  variant: ProductVariant | null;
+  state: RowState | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  onPatch: (patch: Partial<RowState>) => void;
+}
+
+const EditDialog = ({
+  open, product, variant, state, isSaving, onClose, onSave, onPatch,
+}: EditDialogProps) => {
+  if (!product || !variant || !state) return null;
+
+  const imageUrl = product.images?.[0];
+  const savedDiscount = variant.discount ?? 0;
+  const savedDiscType = (variant.discountType as DiscountType) ?? "%";
+  const discountPreviewPrice =
+    state.discountValue > 0
+      ? applyDiscount(variant.price, state.discountType, state.discountValue)
+      : null;
+
+  const changed =
+    state.newStock !== variant.units ||
+    state.newPrice !== variant.price ||
+    state.discountValue !== (variant.discount ?? 0) ||
+    state.discountType !== ((variant.discountType as DiscountType) ?? "%");
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen
+      PaperProps={{ sx: { bgcolor: "grey.50" } }}
+    >
+      {/* Header */}
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          px: 2,
+          py: 1.5,
+          bgcolor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <IconButton onClick={onClose} size="small">
+          <ArrowBackIcon />
+        </IconButton>
+        <Box flex={1} overflow="hidden">
+          <H6 fontWeight={800} fontSize={14} noWrap>{product.name}</H6>
+          <Small color="text.disabled" fontWeight={700}>{variant.sku ?? "—"}</Small>
+        </Box>
+        <Chip
+          size="small"
+          label={STATUS_CHIP[state.status].label}
+          color={STATUS_CHIP[state.status].color}
+          sx={{ fontWeight: 800, fontSize: 11 }}
+        />
+      </Box>
+
+      <DialogContent sx={{ p: 2, pt: 2.5 }}>
+        {/* Product image */}
+        <Box
+          sx={{
+            width: "100%",
+            height: 200,
+            borderRadius: 3,
+            overflow: "hidden",
+            bgcolor: "grey.100",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mb: 2.5,
+            position: "relative",
+            border: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          {imageUrl ? (
+            <Box component="img" src={imageUrl} alt={product.name} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <Box sx={{ textAlign: "center", color: "text.disabled" }}>
+              <ImageIcon sx={{ fontSize: 48 }} />
+              <Small fontWeight={700} display="block" mt={0.5}>No image</Small>
+            </Box>
+          )}
+          {product.brand && (
+            <Box sx={{ position: "absolute", top: 10, left: 10, bgcolor: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, fontWeight: 800, px: 0.75, py: 0.3, borderRadius: 1, backdropFilter: "blur(4px)" }}>
+              {product.brand}
+            </Box>
+          )}
+        </Box>
+
+        {/* ── Stock ── */}
+        <Card sx={{ p: 2, mb: 2, borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none" }}>
+          <Small fontWeight={900} sx={{ textTransform: "uppercase", fontSize: 11, letterSpacing: ".5px", color: "text.secondary", display: "block", mb: 1.5 }}>
+            Stock
+          </Small>
+          <FlexBox gap={2}>
+            <Box flex={1}>
+              <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>Current</Small>
+              <Span
+                fontWeight={800}
+                fontSize={15}
+                color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "success.main"}
+              >
+                {variant.units === 0 ? "Out of stock" : variant.units}
+              </Span>
+            </Box>
+            <Box flex={1}>
+              <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>New</Small>
+              <TextField
+                size="small" type="number" fullWidth disabled={isSaving}
+                value={state.newStock}
+                slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                onChange={(e) => onPatch({ newStock: Math.max(0, Number(e.target.value)), status: "edited" })}
+              />
+            </Box>
+          </FlexBox>
+        </Card>
+
+        {/* ── Price ── */}
+        <Card sx={{ p: 2, mb: 2, borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none" }}>
+          <Small fontWeight={900} sx={{ textTransform: "uppercase", fontSize: 11, letterSpacing: ".5px", color: "text.secondary", display: "block", mb: 1.5 }}>
+            Price (LKR)
+          </Small>
+          <FlexBox gap={2}>
+            <Box flex={1}>
+              <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>Current</Small>
+              <Span fontWeight={800} fontSize={15}>
+                <Box component="span" sx={{ color: "text.disabled", fontWeight: 900, fontSize: 11, mr: 0.5 }}>LKR</Box>
+                {variant.price.toLocaleString("en-LK")}
+              </Span>
+            </Box>
+            <Box flex={1}>
+              <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>New</Small>
+              <TextField
+                size="small" type="number" fullWidth disabled={isSaving}
+                value={state.newPrice}
+                slotProps={{
+                  htmlInput: { min: 0, step: 0.01 },
+                  input: { startAdornment: (<InputAdornment position="start"><Small fontWeight={900} color="text.disabled" fontSize={11}>LKR</Small></InputAdornment>) },
+                }}
+                onChange={(e) => onPatch({ newPrice: Math.max(0, Number(e.target.value)), status: "edited" })}
+              />
+            </Box>
+          </FlexBox>
+        </Card>
+
+        {/* ── Discount ── */}
+        <Card sx={{ p: 2, mb: 3, borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none" }}>
+          <Small fontWeight={900} sx={{ textTransform: "uppercase", fontSize: 11, letterSpacing: ".5px", color: "text.secondary", display: "block", mb: 1.5 }}>
+            Discount
+          </Small>
+
+          {savedDiscount > 0 ? (
+            <Small display="block" mb={1.25} fontWeight={800} fontSize={11} color="success.main" sx={{ textTransform: "uppercase" }}>
+              Current: {savedDiscount}{savedDiscType}
+            </Small>
+          ) : (
+            <Small display="block" mb={1.25} fontWeight={700} fontSize={11} color="text.disabled">
+              No current discount
+            </Small>
+          )}
+
+          <FlexBox alignItems="stretch" gap={1.5}>
+            {/* % / LKR toggle buttons stacked vertically */}
+            <Box display="flex" flexDirection="column" gap={0.75}>
+              {(["%", "LKR"] as DiscountType[]).map((opt) => (
+                <Button
+                  key={opt}
+                  size="small"
+                  variant={state.discountType === opt ? "contained" : "outlined"}
+                  disabled={isSaving}
+                  onClick={() => onPatch({
+                    discountType: opt,
+                    status: state.discountValue > 0 || state.newStock !== variant.units || state.newPrice !== variant.price ? "edited" : "idle",
+                  })}
+                  sx={{ minWidth: 52, py: 0.5, px: 1, fontWeight: 900, fontSize: 12, lineHeight: 1 }}
+                >
+                  {opt}
+                </Button>
+              ))}
+            </Box>
+
+            {/* Discount value input */}
+            <TextField
+              size="small" type="number" disabled={isSaving}
+              placeholder="0"
+              value={state.discountValue || ""}
+              fullWidth
+              slotProps={{
+                htmlInput: { min: 0, max: state.discountType === "%" ? 100 : undefined, step: state.discountType === "%" ? 0.1 : 1 },
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Small fontWeight={900} color="text.disabled" fontSize={11}>{state.discountType}</Small>
+                    </InputAdornment>
+                  ),
+                },
+              }}
+              onChange={(e) => {
+                const val = Math.max(0, Number(e.target.value));
+                onPatch({ discountValue: val, status: val > 0 || state.newStock !== variant.units || state.newPrice !== variant.price ? "edited" : "idle" });
+              }}
+            />
+          </FlexBox>
+
+          {discountPreviewPrice !== null && (
+            <Small display="block" mt={1} fontWeight={800} color="primary.main" fontSize={12}>
+              → After discount: LKR {discountPreviewPrice.toLocaleString("en-LK")}
+            </Small>
+          )}
+        </Card>
+
+        {/* ── Action buttons ── */}
+        <FlexBox gap={1.5} flexDirection="column">
+          <LoadingButton
+            variant="contained" fullWidth size="large"
+            loading={isSaving} disabled={!changed}
+            onClick={onSave}
+            sx={{ fontWeight: 800, borderRadius: 2.5, py: 1.25 }}
+          >
+            Save Changes
+          </LoadingButton>
+          <Button
+            variant="outlined" fullWidth size="large"
+            disabled={isSaving}
+            onClick={onClose}
+            sx={{ fontWeight: 800, borderRadius: 2.5, py: 1.25 }}
+          >
+            Back
+          </Button>
+        </FlexBox>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ─── Mobile Product Card ───────────────────────────────────────────────────────
+
+interface MobileProductCardProps {
+  product: Product1;
+  variant: ProductVariant;
+  state: RowState;
+  onEdit: () => void;
+}
+
+const MobileProductCard = ({ product, variant, state, onEdit }: MobileProductCardProps) => {
+  const imageUrl = product.images?.[0];
+  const savedDiscount = variant.discount ?? 0;
+  const savedDiscType = (variant.discountType as DiscountType) ?? "%";
+  const chip = STATUS_CHIP[state.status];
+
+  return (
+    <Card sx={{
+      borderRadius: 3, border: "1px solid", borderColor: "divider",
+      boxShadow: "none", overflow: "hidden", position: "relative",
+      ...(state.status === "edited" && { borderColor: "warning.main", borderWidth: 1.5 }),
+    }}>
+      {/* Edit button — top-right corner */}
+      <IconButton
+        onClick={onEdit}
+        size="small"
+        sx={{
+          position: "absolute", top: 8, right: 8, zIndex: 2,
+          bgcolor: "background.paper", border: "1px solid",
+          borderColor: "divider", boxShadow: 1,
+          "&:hover": { bgcolor: "primary.main", color: "#fff", borderColor: "primary.main" },
+        }}
+      >
+        <EditIcon fontSize="small" />
+      </IconButton>
+
+      {/* Product image + name */}
+      <FlexBox alignItems="center" gap={1.5} p={1.5} pb={1}>
+        <Avatar
+          src={imageUrl}
+          variant="rounded"
+          sx={{ width: 56, height: 56, bgcolor: "grey.200", flexShrink: 0, border: "1.5px solid", borderColor: "divider", borderRadius: 2 }}
+        >
+          {!imageUrl && (product.name?.charAt(0)?.toUpperCase() || <ImageIcon fontSize="small" />)}
+        </Avatar>
+        <Box overflow="hidden" pr={4}>
+          <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>{product.name}</H6>
+          <Small color="text.disabled" fontWeight={700}>{variant.sku ?? "—"}</Small>
+        </Box>
+      </FlexBox>
+
+      <Divider />
+
+      {/* Stats row: Stock | Price | Discount */}
+      <FlexBox px={1.5} py={1.25} gap={0} sx={{ "& > *": { flex: 1 } }}>
+        {/* Stock */}
+        <Box>
+          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 9.5, letterSpacing: ".3px", display: "block", mb: 0.4 }}>Stock</Small>
+          <Span
+            fontWeight={800} fontSize={13}
+            color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "text.primary"}
+          >
+            {variant.units === 0 ? "Out" : variant.units}
+          </Span>
+        </Box>
+
+        {/* Divider */}
+        <Box sx={{ width: "1px", bgcolor: "divider", mx: 1, alignSelf: "stretch" }} />
+
+        {/* Price */}
+        <Box>
+          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 9.5, letterSpacing: ".3px", display: "block", mb: 0.4 }}>Price</Small>
+          <Span fontWeight={800} fontSize={13}>
+            <Box component="span" sx={{ fontSize: 10, fontWeight: 700, color: "text.disabled", mr: 0.3 }}>LKR</Box>
+            {variant.price.toLocaleString("en-LK")}
+          </Span>
+        </Box>
+
+        {/* Divider */}
+        <Box sx={{ width: "1px", bgcolor: "divider", mx: 1, alignSelf: "stretch" }} />
+
+        {/* Discount */}
+        <Box>
+          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 9.5, letterSpacing: ".3px", display: "block", mb: 0.4 }}>Discount</Small>
+          {savedDiscount > 0 ? (
+            <Span fontWeight={800} fontSize={13} color="success.main">{savedDiscount}{savedDiscType}</Span>
+          ) : (
+            <Span fontWeight={700} fontSize={12} color="text.disabled">None</Span>
+          )}
+        </Box>
+      </FlexBox>
+
+      {/* Status badge */}
+      {state.status !== "idle" && (
+        <Box px={1.5} pb={1.25}>
+          <Chip
+            size="small" label={chip.label} color={chip.color}
+            sx={{ fontWeight: 800, fontSize: 10.5, height: 20 }}
+            icon={state.status === "saving" ? <CircularProgress size={9} color="inherit" /> : undefined}
+          />
+        </Box>
+      )}
+    </Card>
+  );
+};
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
@@ -183,6 +541,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("stock-asc");
 
+  // Edit dialog state
+  const [editTarget, setEditTarget] = useState<{ product: Product1; variant: ProductVariant } | null>(null);
+
   // ── Helpers ───────────────────────────────────────────────────────────────────
 
   const getState = useCallback(
@@ -197,7 +558,6 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
     [rowStates]
   );
 
-  // defaults carries the variant's current saved values so patchState always initialises correctly
   const makeDefaults = (variant: ProductVariant) => ({
     units:        variant.units,
     price:        variant.price,
@@ -265,6 +625,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
         });
 
         enqueueSnackbar(`"${product.name}" saved successfully`, { variant: "success" });
+        setEditTarget(null);
       } catch {
         patchState(variant.id, defaults, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
@@ -316,6 +677,20 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const inStock     = flatRows.filter(({ variant }) => variant.units > 0).length;
   const outOfStock  = flatRows.filter(({ variant }) => variant.units === 0).length;
   const lowStock    = flatRows.filter(({ variant }) => variant.units > 0 && variant.units <= 5).length;
+
+  // Edit dialog handlers
+  const editState = editTarget ? getState(editTarget.variant) : null;
+  const editDefaults = editTarget ? makeDefaults(editTarget.variant) : null;
+
+  const handleEditPatch = (patch: Partial<RowState>) => {
+    if (!editTarget || !editDefaults) return;
+    patchState(editTarget.variant.id, editDefaults, patch);
+  };
+
+  const handleEditSave = () => {
+    if (!editTarget) return;
+    saveRow(editTarget.product, editTarget.variant);
+  };
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -393,8 +768,38 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
         </Small>
       </Card>
 
-      {/* Table */}
-      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none", overflow: "hidden" }}>
+      {/* ── MOBILE: Card grid (hidden on md+) ── */}
+      <Box sx={{ display: { xs: "block", md: "none" } }}>
+        {isLoading ? (
+          <Grid container spacing={1.5}>
+            {[...Array(6)].map((_, i) => (
+              <Grid item xs={12} key={i}>
+                <Skeleton variant="rounded" height={110} sx={{ borderRadius: 3 }} />
+              </Grid>
+            ))}
+          </Grid>
+        ) : rows.length === 0 ? (
+          <Box sx={{ py: 8, textAlign: "center" }}>
+            <Paragraph color="text.disabled" fontWeight={700}>No products found.</Paragraph>
+          </Box>
+        ) : (
+          <Grid container spacing={1.5}>
+            {rows.map(({ product, variant }) => (
+              <Grid item xs={12} key={variant.id}>
+                <MobileProductCard
+                  product={product}
+                  variant={variant}
+                  state={getState(variant)}
+                  onEdit={() => setEditTarget({ product, variant })}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* ── DESKTOP: Table (hidden on xs/sm) ── */}
+      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none", overflow: "hidden", display: { xs: "none", md: "block" } }}>
         <TableContainer>
           <Table sx={{ minWidth: 1050 }}>
             <TableHead>
@@ -441,13 +846,11 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                 const chip     = STATUS_CHIP[s.status];
                 const defaults = makeDefaults(variant);
 
-                // Discount preview — display only, does NOT affect newPrice field
                 const discountPreviewPrice =
                   s.discountValue > 0
                     ? applyDiscount(variant.price, s.discountType, s.discountValue)
                     : null;
 
-                // Saved discount on this variant (from data)
                 const savedDiscount  = variant.discount ?? 0;
                 const savedDiscType  = (variant.discountType as DiscountType) ?? "%";
 
@@ -512,94 +915,72 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                     </TableCell>
 
                     {/* ── Discount ── */}
-                    {/* ── Discount ── */}
-<TableCell>
-  <Box>
-    {/* Current saved discount label */}
-    {savedDiscount > 0 ? (
-      <Small display="block" mb={0.75} fontWeight={800} fontSize={10.5} color="success.main" sx={{ textTransform: "uppercase" }}>
-        Current: {savedDiscount}{savedDiscType}
-      </Small>
-    ) : (
-      <Small display="block" mb={0.75} fontWeight={700} fontSize={10.5} color="text.disabled">
-        No discount
-      </Small>
-    )}
+                    <TableCell>
+                      <Box>
+                        {savedDiscount > 0 ? (
+                          <Small display="block" mb={0.75} fontWeight={800} fontSize={10.5} color="success.main" sx={{ textTransform: "uppercase" }}>
+                            Current: {savedDiscount}{savedDiscType}
+                          </Small>
+                        ) : (
+                          <Small display="block" mb={0.75} fontWeight={700} fontSize={10.5} color="text.disabled">
+                            No discount
+                          </Small>
+                        )}
 
-    {/* Toggle (vertical) + Input (beside it) — both on same horizontal line */}
-    <FlexBox alignItems="stretch" gap={1}>
+                        <FlexBox alignItems="stretch" gap={1}>
+                          <Box display="flex" flexDirection="column" gap={0.5}>
+                            {(["%", "LKR"] as DiscountType[]).map((opt) => (
+                              <Button
+                                key={opt}
+                                size="small"
+                                variant={s.discountType === opt ? "contained" : "outlined"}
+                                disabled={isSaving}
+                                onClick={() => {
+                                  if (s.discountType === opt) return;
+                                  patchState(variant.id, defaults, {
+                                    discountType: opt,
+                                    status: s.discountValue > 0 || s.newStock !== variant.units || s.newPrice !== variant.price ? "edited" : "idle",
+                                  });
+                                }}
+                                sx={{ minWidth: 46, py: 0.3, px: 0.75, fontWeight: 900, fontSize: 11, lineHeight: 1 }}
+                              >
+                                {opt}
+                              </Button>
+                            ))}
+                          </Box>
 
-      {/* % / LKR stacked vertically */}
-      <Box display="flex" flexDirection="column" gap={0.5}>
-        {(["%" , "LKR"] as DiscountType[]).map((opt) => (
-          <Button
-            key={opt}
-            size="small"
-            variant={s.discountType === opt ? "contained" : "outlined"}
-            disabled={isSaving}
-            onClick={() => {
-              if (s.discountType === opt) return;
-              patchState(variant.id, defaults, {
-                discountType: opt,
-                status:
-                  s.discountValue > 0 || s.newStock !== variant.units || s.newPrice !== variant.price
-                    ? "edited"
-                    : "idle",
-              });
-            }}
-            sx={{
-              minWidth: 46,
-              py: 0.3,
-              px: 0.75,
-              fontWeight: 900,
-              fontSize: 11,
-              lineHeight: 1,
-            }}
-          >
-            {opt}
-          </Button>
-        ))}
-      </Box>
+                          <TextField
+                            size="small" type="number" disabled={isSaving}
+                            placeholder="0"
+                            value={s.discountValue || ""}
+                            slotProps={{
+                              htmlInput: { min: 0, max: s.discountType === "%" ? 100 : undefined, step: s.discountType === "%" ? 0.1 : 1 },
+                              input: {
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Small fontWeight={900} color="text.disabled" fontSize={11}>{s.discountType}</Small>
+                                  </InputAdornment>
+                                ),
+                              },
+                            }}
+                            onChange={(e) => {
+                              const val = Math.max(0, Number(e.target.value));
+                              patchState(variant.id, defaults, {
+                                discountValue: val,
+                                status: val > 0 || s.newStock !== variant.units || s.newPrice !== variant.price ? "edited" : "idle",
+                              });
+                            }}
+                            sx={{ width: 110 }}
+                          />
+                        </FlexBox>
 
-      {/* Discount value input */}
-      <TextField
-        size="small"
-        type="number"
-        disabled={isSaving}
-        placeholder="0"
-        value={s.discountValue || ""}
-        slotProps={{
-          htmlInput: {
-            min: 0,
-            max: s.discountType === "%" ? 100 : undefined,
-            step: s.discountType === "%" ? 0.1 : 1,
-          },
-          input: {
-            endAdornment: (
-              <InputAdornment position="end">
-                <Small fontWeight={900} color="text.disabled" fontSize={11}>
-                  {s.discountType}
-                </Small>
-              </InputAdornment>
-            ),
-          },
-        }}
-        onChange={(e) => {
-          const val = Math.max(0, Number(e.target.value));
-          patchState(variant.id, defaults, {
-            discountValue: val,
-            status:
-              val > 0 || s.newStock !== variant.units || s.newPrice !== variant.price
-                ? "edited"
-                : "idle",
-          });
-        }}
-        sx={{ width: 110 }}
-      />
-
-    </FlexBox>
-  </Box>
-</TableCell>
+                        {discountPreviewPrice !== null && (
+                          <Small display="block" mt={0.75} fontWeight={800} color="primary.main" fontSize={11}>
+                            → LKR {discountPreviewPrice.toLocaleString("en-LK")}
+                          </Small>
+                        )}
+                      </Box>
+                    </TableCell>
 
                     {/* ── Status ── */}
                     <TableCell>
@@ -651,6 +1032,18 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
           </FlexBetween>
         )}
       </Card>
+
+      {/* Edit Dialog (mobile) */}
+      <EditDialog
+        open={Boolean(editTarget)}
+        product={editTarget?.product ?? null}
+        variant={editTarget?.variant ?? null}
+        state={editState}
+        isSaving={editState?.status === "saving"}
+        onClose={() => setEditTarget(null)}
+        onSave={handleEditSave}
+        onPatch={handleEditPatch}
+      />
     </Box>
   );
 };
