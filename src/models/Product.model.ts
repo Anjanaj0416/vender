@@ -8,6 +8,8 @@ export interface ProductVariant {
   sku: string;
   units: number;
   price: number;
+  discount?: number;          // stored value (0 = none)
+  discountType?: "%" | "LKR"; // type of the stored discount
   image?: string;
   reOrderLevel: number;
   attributes: VariantAttribute[];

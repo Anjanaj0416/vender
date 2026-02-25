@@ -17,7 +17,34 @@ export const vendorApi = createApi({
         method: "PATCH",
         body,
       }),
-      invalidatesTags: ["VENDOR_PRODUCT"],
+      async onQueryStarted(
+        { userId, storeId, productId, variantId, body },
+        { dispatch, queryFulfilled }
+      ) {
+        try {
+          await queryFulfilled;
+          dispatch(
+            vendorApi.util.updateQueryData(
+              "getVendorProducts",
+              { userId, storeId },
+              (draft) => {
+                const product = draft.data?.find((p: any) => p.id === productId);
+                if (product) {
+                  const variant = product.variants?.find((v: any) => v.id === variantId);
+                  if (variant) {
+                    variant.units        = body.units;
+                    variant.price        = body.price;
+                    variant.discount     = body.discount     ?? 0;
+                    variant.discountType = body.discountType ?? "%";
+                  }
+                }
+              }
+            )
+          );
+        } catch {
+          // save failed — saveRow handles the error state
+        }
+      },
     }),
   }),
 });

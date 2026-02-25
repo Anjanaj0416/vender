@@ -53,7 +53,7 @@ interface Props {
   storeId: string;
 }
 
-// ─── Status chip config ─────────────────────────────────────────────────────────
+// ─── Status chip config ────────────────────────────────────────────────────────
 
 const STATUS_CHIP: Record<
   RowState["status"],
@@ -66,7 +66,7 @@ const STATUS_CHIP: Record<
   error:  { label: "Error",      color: "error"    },
 };
 
-// ─── Helper: apply discount to base price ──────────────────────────────────────
+// ─── Helper: compute discounted price preview ──────────────────────────────────
 
 function applyDiscount(basePrice: number, type: DiscountType, value: number): number {
   if (!value || value <= 0) return basePrice;
@@ -77,7 +77,7 @@ function applyDiscount(basePrice: number, type: DiscountType, value: number): nu
   return Math.max(0, Math.round((basePrice - value) * 100) / 100);
 }
 
-// ─── Sub-component: product avatar with hover preview ──────────────────────────
+// ─── Sub-component: product avatar with hover preview ─────────────────────────
 
 interface ProductAvatarWithPreviewProps {
   product: Product1;
@@ -89,8 +89,7 @@ const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreview
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const imageUrl = product.images?.[0];
-  const variantLabel =
-    variant.attributes?.map((a) => a.value).join(" / ") || "Default";
+  const variantLabel = variant.attributes?.map((a) => a.value).join(" / ") || "Default";
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLElement>) => {
     const target = e.currentTarget;
@@ -102,8 +101,6 @@ const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreview
     setAnchorEl(null);
   };
 
-  const open = Boolean(anchorEl);
-
   return (
     <>
       <Avatar
@@ -111,108 +108,44 @@ const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreview
         variant="rounded"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        sx={{
-          width: 42, height: 42,
-          bgcolor: "grey.200",
-          fontWeight: 900, fontSize: 16,
-          cursor: "default",
-          flexShrink: 0,
-          border: "1.5px solid",
-          borderColor: "divider",
-        }}
+        sx={{ width: 42, height: 42, bgcolor: "grey.200", fontWeight: 900, fontSize: 16, cursor: "default", flexShrink: 0, border: "1.5px solid", borderColor: "divider" }}
       >
-        {!imageUrl && (
-          product.name?.charAt(0)?.toUpperCase() || <ImageIcon fontSize="small" />
-        )}
+        {!imageUrl && (product.name?.charAt(0)?.toUpperCase() || <ImageIcon fontSize="small" />)}
       </Avatar>
 
-      <Popper open={open} anchorEl={anchorEl} placement="right-start" transition sx={{ zIndex: 1400 }}>
+      <Popper open={Boolean(anchorEl)} anchorEl={anchorEl} placement="right-start" transition sx={{ zIndex: 1400 }}>
         {({ TransitionProps }) => (
           <Fade {...TransitionProps} timeout={180}>
-            <Paper
-              elevation={8}
-              sx={{
-                width: 220,
-                borderRadius: 3,
-                overflow: "hidden",
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              {/* Image area */}
-              <Box
-                sx={{
-                  width: "100%",
-                  height: 160,
-                  position: "relative",
-                  bgcolor: "grey.100",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+            <Paper elevation={8} sx={{ width: 220, borderRadius: 3, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+              <Box sx={{ width: "100%", height: 160, position: "relative", bgcolor: "grey.100", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {imageUrl ? (
-                  <Box
-                    component="img"
-                    src={imageUrl}
-                    alt={product.name}
-                    sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
+                  <Box component="img" src={imageUrl} alt={product.name} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <Box sx={{ textAlign: "center", color: "text.disabled" }}>
                     <ImageIcon sx={{ fontSize: 40, mb: 0.5 }} />
                     <Small fontWeight={700} display="block">No image</Small>
                   </Box>
                 )}
-
-                {/* Brand badge overlay */}
                 {product.brand && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      top: 8, left: 8,
-                      bgcolor: "rgba(0,0,0,0.55)",
-                      color: "#fff",
-                      fontSize: 10, fontWeight: 800,
-                      px: 0.75, py: 0.25,
-                      borderRadius: 1,
-                      backdropFilter: "blur(4px)",
-                      letterSpacing: ".3px",
-                    }}
-                  >
+                  <Box sx={{ position: "absolute", top: 8, left: 8, bgcolor: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, fontWeight: 800, px: 0.75, py: 0.25, borderRadius: 1, backdropFilter: "blur(4px)", letterSpacing: ".3px" }}>
                     {product.brand}
                   </Box>
                 )}
               </Box>
-
-              {/* Info area */}
               <Box sx={{ p: 1.5, bgcolor: "#fff" }}>
-                <H6 fontWeight={800} fontSize={12.5} noWrap title={product.name} sx={{ mb: 0.4 }}>
-                  {product.name}
-                </H6>
-                <Small color="text.secondary" fontWeight={700} display="block">
-                  {variantLabel}
-                </Small>
-
-                {/* Price range */}
+                <H6 fontWeight={800} fontSize={12.5} noWrap title={product.name} sx={{ mb: 0.4 }}>{product.name}</H6>
+                <Small color="text.secondary" fontWeight={700} display="block">{variantLabel}</Small>
                 <FlexBox alignItems="center" justifyContent="space-between" mt={1}>
                   <Small color="text.disabled" fontWeight={700} fontSize={10.5}>PRICE RANGE</Small>
                   <Small fontWeight={800} color="primary.main" fontSize={12}>
                     LKR {product.minPrice.toLocaleString("en-LK")}
-                    {product.minPrice !== product.maxPrice &&
-                      ` – ${product.maxPrice.toLocaleString("en-LK")}`}
+                    {product.minPrice !== product.maxPrice && ` – ${product.maxPrice.toLocaleString("en-LK")}`}
                   </Small>
                 </FlexBox>
-
-                {/* Category */}
                 {product.category && (
                   <FlexBox alignItems="center" justifyContent="space-between" mt={0.5}>
                     <Small color="text.disabled" fontWeight={700} fontSize={10.5}>CATEGORY</Small>
-                    <Chip
-                      label={product.category.name}
-                      size="small"
-                      sx={{ height: 18, fontSize: 10, fontWeight: 800, "& .MuiChip-label": { px: 0.75 } }}
-                    />
+                    <Chip label={product.category.name} size="small" sx={{ height: 18, fontSize: 10, fontWeight: 800, "& .MuiChip-label": { px: 0.75 } }} />
                   </FlexBox>
                 )}
               </Box>
@@ -227,19 +160,13 @@ const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreview
 // ─── StatCard ──────────────────────────────────────────────────────────────────
 
 const StatCard = ({ label, value, color }: { label: string; value: number; color: string }) => (
-  <Card
-    sx={{
-      p: 2, borderRadius: 3,
-      border: "1px solid", borderColor: "divider",
-      boxShadow: "none",
-    }}
-  >
+  <Card sx={{ p: 2, borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none" }}>
     <Span fontWeight={900} fontSize={26} color={color}>{value}</Span>
     <Paragraph color="text.secondary" fontWeight={700} fontSize={13} mt={0.25}>{label}</Paragraph>
   </Card>
 );
 
-// ─── Main Component ─────────────────────────────────────────────────────────────
+// ─── Main Component ────────────────────────────────────────────────────────────
 
 const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -254,36 +181,45 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("none");
+  const [sort, setSort] = useState("stock-asc");
 
-  // ── Helpers ──────────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────────
 
   const getState = useCallback(
     (variant: ProductVariant): RowState =>
       rowStates[variant.id] ?? {
-        newStock: variant.units,
-        newPrice: variant.price,
-        discountType: "%" as DiscountType,
-        discountValue: 0,
+        newStock:      variant.units,
+        newPrice:      variant.price,
+        discountType:  (variant.discountType as DiscountType) ?? "%",
+        discountValue: variant.discount ?? 0,
         status: "idle",
       },
     [rowStates]
   );
 
+  // defaults carries the variant's current saved values so patchState always initialises correctly
+  const makeDefaults = (variant: ProductVariant) => ({
+    units:        variant.units,
+    price:        variant.price,
+    discount:     variant.discount ?? 0,
+    discountType: (variant.discountType as DiscountType) ?? "%",
+  });
+
   const patchState = useCallback(
-    (variantId: string, defaults: { units: number; price: number }, patch: Partial<RowState>) =>
+    (
+      variantId: string,
+      defaults: { units: number; price: number; discount: number; discountType: DiscountType },
+      patch: Partial<RowState>
+    ) =>
       setRowStates((prev) => {
         const existing = prev[variantId] ?? {
-          newStock: defaults.units,
-          newPrice: defaults.price,
-          discountType: "%" as DiscountType,
-          discountValue: 0,
+          newStock:      defaults.units,
+          newPrice:      defaults.price,
+          discountType:  defaults.discountType,
+          discountValue: defaults.discount,
           status: "idle" as const,
         };
-        return {
-          ...prev,
-          [variantId]: { ...existing, ...patch } as RowState,
-        };
+        return { ...prev, [variantId]: { ...existing, ...patch } as RowState };
       }),
     []
   );
@@ -291,7 +227,12 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const isChanged = useCallback(
     (variant: ProductVariant) => {
       const s = getState(variant);
-      return s.newStock !== variant.units || s.newPrice !== variant.price || s.discountValue > 0;
+      return (
+        s.newStock      !== variant.units ||
+        s.newPrice      !== variant.price ||
+        s.discountValue !== (variant.discount ?? 0) ||
+        s.discountType  !== ((variant.discountType as DiscountType) ?? "%")
+      );
     },
     [getState]
   );
@@ -301,14 +242,20 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const saveRow = useCallback(
     async (product: Product1, variant: ProductVariant) => {
       const s = getState(variant);
-      patchState(variant.id, { units: variant.units, price: variant.price }, { status: "saving" });
+      const defaults = makeDefaults(variant);
+      patchState(variant.id, defaults, { status: "saving" });
       try {
         await updateVariant({
           userId,
           storeId,
           productId: product.id,
           variantId: variant.id,
-          body: { units: s.newStock, price: s.newPrice },
+          body: {
+            units:        s.newStock,
+            price:        s.newPrice,
+            discount:     s.discountValue,
+            discountType: s.discountType,
+          },
         }).unwrap();
 
         setRowStates((prev) => {
@@ -319,35 +266,30 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
         enqueueSnackbar(`"${product.name}" saved successfully`, { variant: "success" });
       } catch {
-        patchState(variant.id, { units: variant.units, price: variant.price }, { status: "error" });
+        patchState(variant.id, defaults, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getState, patchState, updateVariant, userId, storeId, enqueueSnackbar]
   );
 
   // ── Flat rows ─────────────────────────────────────────────────────────────────
 
   const flatRows = useMemo(
-    () =>
-      products.flatMap((product) =>
-        (product.variants ?? []).map((variant) => ({ product, variant }))
-      ),
+    () => products.flatMap((product) =>
+      (product.variants ?? []).map((variant) => ({ product, variant }))
+    ),
     [products]
   );
 
-  // ── Save all edited ───────────────────────────────────────────────────────────
+  // ── Save all / Discard all ────────────────────────────────────────────────────
 
   const saveAll = async () => {
     const edited = flatRows.filter(({ variant }) => isChanged(variant));
-    if (!edited.length) {
-      enqueueSnackbar("No changes to save.", { variant: "info" });
-      return;
-    }
+    if (!edited.length) { enqueueSnackbar("No changes to save.", { variant: "info" }); return; }
     await Promise.all(edited.map(({ product, variant }) => saveRow(product, variant)));
   };
-
-  // ── Discard all ───────────────────────────────────────────────────────────────
 
   const discardAll = () => {
     setRowStates({});
@@ -358,10 +300,8 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
   const rows = useMemo(() => {
     const q = search.toLowerCase();
-    const filtered = flatRows.filter(
-      ({ product, variant }) =>
-        product.name.toLowerCase().includes(q) ||
-        variant.sku?.toLowerCase().includes(q)
+    const filtered = flatRows.filter(({ product, variant }) =>
+      product.name.toLowerCase().includes(q) || variant.sku?.toLowerCase().includes(q)
     );
     switch (sort) {
       case "stock-asc":  filtered.sort((a, b) => a.variant.units - b.variant.units); break;
@@ -373,10 +313,9 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   }, [flatRows, search, sort]);
 
   const editedCount = flatRows.filter(({ variant }) => isChanged(variant)).length;
-
-  const inStock    = flatRows.filter(({ variant }) => variant.units > 0).length;
-  const outOfStock = flatRows.filter(({ variant }) => variant.units === 0).length;
-  const lowStock   = flatRows.filter(({ variant }) => variant.units > 0 && variant.units <= 5).length;
+  const inStock     = flatRows.filter(({ variant }) => variant.units > 0).length;
+  const outOfStock  = flatRows.filter(({ variant }) => variant.units === 0).length;
+  const lowStock    = flatRows.filter(({ variant }) => variant.units > 0 && variant.units <= 5).length;
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -410,29 +349,15 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
         </Grid>
       ) : (
         <Grid container spacing={2} mb={3}>
-          <Grid item xs={6} sm={3}>
-            <StatCard label="Total Variants" value={flatRows.length} color="primary.main" />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <StatCard label="In Stock"       value={inStock}         color="success.main" />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <StatCard label="Out of Stock"   value={outOfStock}      color="error.main"   />
-          </Grid>
-          <Grid item xs={6} sm={3}>
-            <StatCard label="Low Stock (≤5)" value={lowStock}        color="warning.main" />
-          </Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Total Products" value={flatRows.length} color="primary.main" /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="In Stock"       value={inStock}         color="success.main" /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Out of Stock"   value={outOfStock}      color="error.main"   /></Grid>
+          <Grid item xs={6} sm={3}><StatCard label="Low Stock (≤5)" value={lowStock}        color="warning.main" /></Grid>
         </Grid>
       )}
 
       {/* Toolbar */}
-      <Card
-        sx={{
-          p: 2, mb: 2,
-          display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5,
-          borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none",
-        }}
-      >
+      <Card sx={{ p: 2, mb: 2, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 1.5, borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none" }}>
         <TextField
           size="small"
           placeholder="Search item code or description…"
@@ -449,51 +374,27 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
           }}
           sx={{ minWidth: 260, flexShrink: 0 }}
         />
-
-        <Select
-          size="small"
-          value={sort}
-          onChange={(e) => setSort(e.target.value)}
-          sx={{ minWidth: 185, fontWeight: 700 }}
-        >
+        <Select size="small" value={sort} onChange={(e) => setSort(e.target.value)} sx={{ minWidth: 185, fontWeight: 700 }}>
           <MenuItem value="none">↕ Sort: None</MenuItem>
           <MenuItem value="stock-asc">Stock: Low → High</MenuItem>
           <MenuItem value="stock-desc">Stock: High → Low</MenuItem>
           <MenuItem value="price-asc">Price: Low → High</MenuItem>
           <MenuItem value="price-desc">Price: High → Low</MenuItem>
         </Select>
-
         <Box flex={1} />
-
-        <Button
-          variant="outlined"
-          color="error"
-          onClick={discardAll}
-          sx={{ fontWeight: 800 }}
-        >
+        <Button variant="outlined" color="error" onClick={discardAll} sx={{ fontWeight: 800 }}>
           Discard Changes
         </Button>
-
-        <LoadingButton
-          variant="contained"
-          onClick={saveAll}
-          sx={{ fontWeight: 800 }}
-        >
+        <LoadingButton variant="contained" onClick={saveAll} sx={{ fontWeight: 800 }}>
           Save All Changes
         </LoadingButton>
-
         <Small color="text.disabled" fontWeight={700} sx={{ width: "100%", mt: 0.5 }}>
           Tip: Edit "New stock", "New price", or "Discount" to enable Save. Hover over the product thumbnail for a larger preview.
         </Small>
       </Card>
 
       {/* Table */}
-      <Card
-        sx={{
-          borderRadius: 3, border: "1px solid", borderColor: "divider",
-          boxShadow: "none", overflow: "hidden",
-        }}
-      >
+      <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none", overflow: "hidden" }}>
         <TableContainer>
           <Table sx={{ minWidth: 1050 }}>
             <TableHead>
@@ -502,21 +403,13 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                   { label: "Product",     minWidth: 280 },
                   { label: "Stock",       minWidth: 220 },
                   { label: "Price (LKR)", minWidth: 260 },
-                  { label: "Discount",    minWidth: 220 },
+                  { label: "Discount",    minWidth: 200 },
                   { label: "Status",      minWidth: 130 },
                   { label: "Actions",     minWidth: 210, align: "right" as const },
                 ].map((col) => (
                   <TableCell
-                    key={col.label}
-                    align={col.align}
-                    sx={{
-                      minWidth: col.minWidth,
-                      fontWeight: 900, fontSize: 11,
-                      textTransform: "uppercase", letterSpacing: ".4px",
-                      color: "text.secondary",
-                      borderBottom: "1.5px solid", borderColor: "divider",
-                      py: 1.5,
-                    }}
+                    key={col.label} align={col.align}
+                    sx={{ minWidth: col.minWidth, fontWeight: 900, fontSize: 11, textTransform: "uppercase", letterSpacing: ".4px", color: "text.secondary", borderBottom: "1.5px solid", borderColor: "divider", py: 1.5 }}
                   >
                     {col.label}
                   </TableCell>
@@ -525,293 +418,236 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
             </TableHead>
 
             <TableBody>
-              {/* Loading skeletons */}
-              {isLoading &&
-                [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    {[...Array(6)].map((__, j) => (
-                      <TableCell key={j}>
-                        <Skeleton variant="rounded" height={36} />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
+              {isLoading && [...Array(5)].map((_, i) => (
+                <TableRow key={i}>
+                  {[...Array(6)].map((__, j) => (
+                    <TableCell key={j}><Skeleton variant="rounded" height={36} /></TableCell>
+                  ))}
+                </TableRow>
+              ))}
 
-              {/* Empty state */}
               {!isLoading && rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                    <Paragraph color="text.disabled" fontWeight={700}>
-                      No products found.
-                    </Paragraph>
+                    <Paragraph color="text.disabled" fontWeight={700}>No products found.</Paragraph>
                   </TableCell>
                 </TableRow>
               )}
 
-              {/* Data rows */}
-              {!isLoading &&
-                rows.map(({ product, variant }) => {
-                  const s        = getState(variant);
-                  const changed  = isChanged(variant);
-                  const isSaving = s.status === "saving";
-                  const chip     = STATUS_CHIP[s.status];
+              {!isLoading && rows.map(({ product, variant }) => {
+                const s        = getState(variant);
+                const changed  = isChanged(variant);
+                const isSaving = s.status === "saving";
+                const chip     = STATUS_CHIP[s.status];
+                const defaults = makeDefaults(variant);
 
-                  // Compute discounted price preview — display only, does NOT affect newPrice
-                  const discountedPreview =
-                    s.discountValue > 0
-                      ? applyDiscount(variant.price, s.discountType, s.discountValue)
-                      : null;
+                // Discount preview — display only, does NOT affect newPrice field
+                const discountPreviewPrice =
+                  s.discountValue > 0
+                    ? applyDiscount(variant.price, s.discountType, s.discountValue)
+                    : null;
 
-                  return (
-                    <TableRow
-                      key={variant.id}
-                      sx={{ "&:hover": { bgcolor: "grey.50" } }}
-                    >
-                      {/* Product */}
-                      <TableCell>
-                        <FlexBox alignItems="center" gap={1.5}>
-                          <ProductAvatarWithPreview product={product} variant={variant} />
-                          <Box overflow="hidden">
-                            <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>
-                              {product.name}
-                            </H6>
-                            <Small color="text.disabled" fontWeight={700}>
-                              {variant.sku ?? "—"}
-                            </Small>
-                          </Box>
-                        </FlexBox>
-                      </TableCell>
+                // Saved discount on this variant (from data)
+                const savedDiscount  = variant.discount ?? 0;
+                const savedDiscType  = (variant.discountType as DiscountType) ?? "%";
 
-                      {/* Stock */}
-                      <TableCell>
-                        <FlexBox alignItems="flex-end" gap={2}>
-                          <Box minWidth={60}>
-                            <Small
-                              color="text.disabled" fontWeight={800} display="block" mb={0.5}
-                              sx={{ textTransform: "uppercase", fontSize: 10.5 }}
-                            >
-                              Current
-                            </Small>
-                            <Span
-                              fontWeight={800}
-                              color={
-                                variant.units === 0  ? "error.main"   :
-                                variant.units <= 5   ? "warning.main" : "success.main"
-                              }
-                            >
-                              {variant.units === 0 ? "Out of stock" : variant.units}
-                            </Span>
-                          </Box>
-                          <Box>
-                            <Small
-                              color="text.disabled" fontWeight={800} display="block" mb={0.5}
-                              sx={{ textTransform: "uppercase", fontSize: 10.5 }}
-                            >
-                              New
-                            </Small>
-                            <TextField
-                              size="small" type="number"
-                              disabled={isSaving}
-                              value={s.newStock}
-                              slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                              onChange={(e) =>
-                                patchState(variant.id, { units: variant.units, price: variant.price }, {
-                                  newStock: Math.max(0, Number(e.target.value)),
-                                  newPrice: s.newPrice,
-                                  status: "edited",
-                                })
-                              }
-                              sx={{ width: 90 }}
-                            />
-                          </Box>
-                        </FlexBox>
-                      </TableCell>
+                return (
+                  <TableRow key={variant.id} sx={{ "&:hover": { bgcolor: "grey.50" } }}>
 
-                      {/* Price */}
-                      <TableCell>
-                        <FlexBox alignItems="flex-end" gap={2}>
-                          <Box minWidth={90}>
-                            <Small
-                              color="text.disabled" fontWeight={800} display="block" mb={0.5}
-                              sx={{ textTransform: "uppercase", fontSize: 10.5 }}
-                            >
-                              Current
-                            </Small>
-                            <Span fontWeight={800}>
-                              <Box component="span" sx={{ color: "text.disabled", fontWeight: 900, fontSize: 11, mr: 0.5 }}>
-                                LKR
-                              </Box>
-                              {variant.price.toLocaleString("en-LK")}
-                            </Span>
-                          </Box>
-                          <Box>
-                            <Small
-                              color="text.disabled" fontWeight={800} display="block" mb={0.5}
-                              sx={{ textTransform: "uppercase", fontSize: 10.5 }}
-                            >
-                              New
-                            </Small>
-                            <TextField
-                              size="small" type="number"
-                              disabled={isSaving}
-                              value={s.newPrice}
-                              slotProps={{
-                                htmlInput: { min: 0, step: 0.01 },
-                                input: {
-                                  startAdornment: (
-                                    <InputAdornment position="start">
-                                      <Small fontWeight={900} color="text.disabled" fontSize={11}>
-                                        LKR
-                                      </Small>
-                                    </InputAdornment>
-                                  ),
-                                },
-                              }}
-                              onChange={(e) =>
-                                patchState(variant.id, { units: variant.units, price: variant.price }, {
-                                  newStock: s.newStock,
-                                  newPrice: Math.max(0, Number(e.target.value)),
-                                  status: "edited",
-                                })
-                              }
-                              sx={{ width: 140 }}
-                            />
-                          </Box>
-                        </FlexBox>
-                      </TableCell>
-
-                      {/* ── Discount ── */}
-                      <TableCell>
-                        <Box>
-                          {/* Type toggle: % / LKR */}
-                          <ToggleButtonGroup
-                            exclusive
-                            size="small"
-                            value={s.discountType}
-                            onChange={(_, val) => {
-                              if (!val) return;
-                              patchState(variant.id, { units: variant.units, price: variant.price }, {
-                                discountType: val as DiscountType,
-                              });
-                            }}
-                            sx={{ mb: 0.75, "& .MuiToggleButton-root": { py: 0.3, px: 1, fontWeight: 800, fontSize: 11 } }}
-                          >
-                            <ToggleButton value="%">%</ToggleButton>
-                            <ToggleButton value="LKR">LKR</ToggleButton>
-                          </ToggleButtonGroup>
-
-                          {/* Discount value input */}
-                          <TextField
-                            size="small"
-                            type="number"
-                            disabled={isSaving}
-                            placeholder="0"
-                            value={s.discountValue || ""}
-                            slotProps={{
-                              htmlInput: {
-                                min: 0,
-                                max: s.discountType === "%" ? 100 : undefined,
-                                step: s.discountType === "%" ? 0.1 : 1,
-                              },
-                              input: {
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <Small fontWeight={900} color="text.disabled" fontSize={11}>
-                                      {s.discountType}
-                                    </Small>
-                                  </InputAdornment>
-                                ),
-                              },
-                            }}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value));
-                              patchState(variant.id, { units: variant.units, price: variant.price }, {
-                                discountValue: val,
-                                status: val > 0 ? "edited" : s.status,
-                              });
-                            }}
-                            sx={{ width: 110 }}
-                          />
-
-                          {/* Preview of discounted price */}
-                          {discountedPreview !== null && (
-                            <Small
-                              display="block"
-                              mt={0.5}
-                              fontWeight={800}
-                              color="success.main"
-                              fontSize={11}
-                            >
-                              → LKR {discountedPreview.toLocaleString("en-LK")}
-                            </Small>
-                          )}
+                    {/* ── Product ── */}
+                    <TableCell>
+                      <FlexBox alignItems="center" gap={1.5}>
+                        <ProductAvatarWithPreview product={product} variant={variant} />
+                        <Box overflow="hidden">
+                          <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>{product.name}</H6>
+                          <Small color="text.disabled" fontWeight={700}>{variant.sku ?? "—"}</Small>
                         </Box>
-                      </TableCell>
+                      </FlexBox>
+                    </TableCell>
 
-                      {/* Status */}
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={chip.label}
-                          color={chip.color}
-                          sx={{ fontWeight: 800, fontSize: 11.5 }}
-                          icon={
-                            isSaving
-                              ? <CircularProgress size={10} color="inherit" />
-                              : undefined
-                          }
-                        />
-                      </TableCell>
+                    {/* ── Stock ── */}
+                    <TableCell>
+                      <FlexBox alignItems="flex-end" gap={2}>
+                        <Box minWidth={60}>
+                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>Current</Small>
+                          <Span fontWeight={800} color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "success.main"}>
+                            {variant.units === 0 ? "Out of stock" : variant.units}
+                          </Span>
+                        </Box>
+                        <Box>
+                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>New</Small>
+                          <TextField
+                            size="small" type="number" disabled={isSaving} value={s.newStock}
+                            slotProps={{ htmlInput: { min: 0, step: 1 } }}
+                            onChange={(e) => patchState(variant.id, defaults, { newStock: Math.max(0, Number(e.target.value)), status: "edited" })}
+                            sx={{ width: 90 }}
+                          />
+                        </Box>
+                      </FlexBox>
+                    </TableCell>
 
-                      {/* Actions */}
-                      <TableCell align="right">
-                        <FlexBox gap={1} justifyContent="flex-end">
-                          <LoadingButton
-                            size="small" variant="contained"
-                            loading={isSaving}
-                            disabled={!changed}
-                            onClick={() => saveRow(product, variant)}
-                            sx={{ fontWeight: 800, minWidth: 70 }}
-                          >
-                            Save
-                          </LoadingButton>
-                          <Button
-                            size="small" variant="outlined"
-                            disabled={isSaving}
-                            onClick={() =>
-                              patchState(variant.id, { units: variant.units, price: variant.price }, {
-                                newStock: variant.units,
-                                newPrice: variant.price,
-                                discountType: "%",
-                                discountValue: 0,
-                                status: "idle",
-                              })
-                            }
-                            sx={{ fontWeight: 800 }}
-                          >
-                            Reset
-                          </Button>
-                        </FlexBox>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    {/* ── Price ── */}
+                    <TableCell>
+                      <FlexBox alignItems="flex-end" gap={2}>
+                        <Box minWidth={90}>
+                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>Current</Small>
+                          <Span fontWeight={800}>
+                            <Box component="span" sx={{ color: "text.disabled", fontWeight: 900, fontSize: 11, mr: 0.5 }}>LKR</Box>
+                            {variant.price.toLocaleString("en-LK")}
+                          </Span>
+                        </Box>
+                        <Box>
+                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>New</Small>
+                          <TextField
+                            size="small" type="number" disabled={isSaving} value={s.newPrice}
+                            slotProps={{
+                              htmlInput: { min: 0, step: 0.01 },
+                              input: { startAdornment: (<InputAdornment position="start"><Small fontWeight={900} color="text.disabled" fontSize={11}>LKR</Small></InputAdornment>) },
+                            }}
+                            onChange={(e) => patchState(variant.id, defaults, { newPrice: Math.max(0, Number(e.target.value)), status: "edited" })}
+                            sx={{ width: 140 }}
+                          />
+                        </Box>
+                      </FlexBox>
+                    </TableCell>
+
+                    {/* ── Discount ── */}
+                    {/* ── Discount ── */}
+<TableCell>
+  <Box>
+    {/* Current saved discount label */}
+    {savedDiscount > 0 ? (
+      <Small display="block" mb={0.75} fontWeight={800} fontSize={10.5} color="success.main" sx={{ textTransform: "uppercase" }}>
+        Current: {savedDiscount}{savedDiscType}
+      </Small>
+    ) : (
+      <Small display="block" mb={0.75} fontWeight={700} fontSize={10.5} color="text.disabled">
+        No discount
+      </Small>
+    )}
+
+    {/* Toggle (vertical) + Input (beside it) — both on same horizontal line */}
+    <FlexBox alignItems="stretch" gap={1}>
+
+      {/* % / LKR stacked vertically */}
+      <Box display="flex" flexDirection="column" gap={0.5}>
+        {(["%" , "LKR"] as DiscountType[]).map((opt) => (
+          <Button
+            key={opt}
+            size="small"
+            variant={s.discountType === opt ? "contained" : "outlined"}
+            disabled={isSaving}
+            onClick={() => {
+              if (s.discountType === opt) return;
+              patchState(variant.id, defaults, {
+                discountType: opt,
+                status:
+                  s.discountValue > 0 || s.newStock !== variant.units || s.newPrice !== variant.price
+                    ? "edited"
+                    : "idle",
+              });
+            }}
+            sx={{
+              minWidth: 46,
+              py: 0.3,
+              px: 0.75,
+              fontWeight: 900,
+              fontSize: 11,
+              lineHeight: 1,
+            }}
+          >
+            {opt}
+          </Button>
+        ))}
+      </Box>
+
+      {/* Discount value input */}
+      <TextField
+        size="small"
+        type="number"
+        disabled={isSaving}
+        placeholder="0"
+        value={s.discountValue || ""}
+        slotProps={{
+          htmlInput: {
+            min: 0,
+            max: s.discountType === "%" ? 100 : undefined,
+            step: s.discountType === "%" ? 0.1 : 1,
+          },
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <Small fontWeight={900} color="text.disabled" fontSize={11}>
+                  {s.discountType}
+                </Small>
+              </InputAdornment>
+            ),
+          },
+        }}
+        onChange={(e) => {
+          const val = Math.max(0, Number(e.target.value));
+          patchState(variant.id, defaults, {
+            discountValue: val,
+            status:
+              val > 0 || s.newStock !== variant.units || s.newPrice !== variant.price
+                ? "edited"
+                : "idle",
+          });
+        }}
+        sx={{ width: 110 }}
+      />
+
+    </FlexBox>
+  </Box>
+</TableCell>
+
+                    {/* ── Status ── */}
+                    <TableCell>
+                      <Chip
+                        size="small" label={chip.label} color={chip.color}
+                        sx={{ fontWeight: 800, fontSize: 11.5 }}
+                        icon={isSaving ? <CircularProgress size={10} color="inherit" /> : undefined}
+                      />
+                    </TableCell>
+
+                    {/* ── Actions ── */}
+                    <TableCell align="right">
+                      <FlexBox gap={1} justifyContent="flex-end">
+                        <LoadingButton
+                          size="small" variant="contained"
+                          loading={isSaving} disabled={!changed}
+                          onClick={() => saveRow(product, variant)}
+                          sx={{ fontWeight: 800, minWidth: 70 }}
+                        >
+                          Save
+                        </LoadingButton>
+                        <Button
+                          size="small" variant="outlined" disabled={isSaving}
+                          onClick={() => patchState(variant.id, defaults, {
+                            newStock:      defaults.units,
+                            newPrice:      defaults.price,
+                            discountType:  defaults.discountType,
+                            discountValue: defaults.discount,
+                            status: "idle",
+                          })}
+                          sx={{ fontWeight: 800 }}
+                        >
+                          Reset
+                        </Button>
+                      </FlexBox>
+                    </TableCell>
+
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>
 
-        {/* Footer */}
         {!isLoading && (
-          <FlexBetween
-            px={2} py={1.25}
-            sx={{ borderTop: "1px solid", borderColor: "divider" }}
-          >
-            <Small color="text.disabled" fontWeight={700}>
-              Showing {rows.length} of {flatRows.length} variants
-            </Small>
-            <Small color="text.disabled" fontWeight={700}>
-              Tip: Hover thumbnail for product preview
-            </Small>
+          <FlexBetween px={2} py={1.25} sx={{ borderTop: "1px solid", borderColor: "divider" }}>
+            <Small color="text.disabled" fontWeight={700}>Showing {rows.length} of {flatRows.length} variants</Small>
+            <Small color="text.disabled" fontWeight={700}>Tip: Hover thumbnail for product preview</Small>
           </FlexBetween>
         )}
       </Card>
