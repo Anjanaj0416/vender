@@ -135,6 +135,19 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   );
 
   // ── Save single row ───────────────────────────────────────────────────────────
+  // FIX: After a successful save, we DELETE the rowState entry entirely instead
+  // of setting status → "saved" → "idle".
+  //
+  // Why this fixes the "Current value not updating" bug:
+  //   • variant.units / variant.price come from the RTK Query cache.
+  //   • invalidatesTags: ["VENDOR_PRODUCT"] triggers a refetch, which updates
+  //     the cache with the new units/price returned by the API.
+  //   • getState() falls back to { newStock: variant.units, newPrice: variant.price }
+  //     when there is NO entry in rowStates for that variantId.
+  //   • So deleting the entry lets the refreshed cache values become both the
+  //     "Current" display AND the "New" input defaults — everything stays in sync.
+  //   • Previously, keeping a stale rowState entry overrode the fresh cache data,
+  //     so "Current" appeared frozen until a hard reload.
 
   const saveRow = useCallback(
     async (product: Product1, variant: ProductVariant) => {
@@ -148,11 +161,17 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
           variantId: variant.id,
           body: { units: s.newStock, price: s.newPrice },
         }).unwrap();
-        patchState(variant.id, { status: "saved" });
+
+        // ── Delete the rowState entry so the component re-reads fresh cache data ──
+        setRowStates((prev) => {
+          const next = { ...prev };
+          delete next[variant.id];
+          return next;
+        });
+
         enqueueSnackbar(`"${product.name}" saved successfully`, {
           variant: "success",
         });
-        setTimeout(() => patchState(variant.id, { status: "idle" }), 1500);
       } catch {
         patchState(variant.id, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
