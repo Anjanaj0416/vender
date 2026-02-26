@@ -140,13 +140,7 @@ const ProductAvatarWithPreview = ({ product, variant }: ProductAvatarWithPreview
               <Box sx={{ p: 1.5, bgcolor: "#fff" }}>
                 <H6 fontWeight={800} fontSize={12.5} noWrap title={product.name} sx={{ mb: 0.4 }}>{product.name}</H6>
                 <Small color="text.secondary" fontWeight={700} display="block">{variantLabel}</Small>
-                <FlexBox alignItems="center" justifyContent="space-between" mt={1}>
-                  <Small color="text.disabled" fontWeight={700} fontSize={10.5}>PRICE RANGE</Small>
-                  <Small fontWeight={800} color="primary.main" fontSize={12}>
-                    LKR {product.minPrice.toLocaleString("en-LK")}
-                    {product.minPrice !== product.maxPrice && ` – ${product.maxPrice.toLocaleString("en-LK")}`}
-                  </Small>
-                </FlexBox>
+                
                 {product.category && (
                   <FlexBox alignItems="center" justifyContent="space-between" mt={0.5}>
                     <Small color="text.disabled" fontWeight={700} fontSize={10.5}>CATEGORY</Small>
