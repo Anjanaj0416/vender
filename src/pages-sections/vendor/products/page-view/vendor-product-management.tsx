@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useCallback, useRef } from "react";
@@ -37,7 +38,8 @@ import { FlexBetween, FlexBox } from "components/flex-box";
 import { Product1, ProductVariant } from "models/Product.model";
 import {
   useGetVendorProductsQuery,
-  useUpdateProductVariantMutation,
+  useBulkSaveVariantsMutation,
+  SaveDetail,
 } from "services/vendor-api";
 import ReplayIcon from "@mui/icons-material/Replay";
 
@@ -81,6 +83,118 @@ function applyDiscount(basePrice: number, type: DiscountType, value: number): nu
   }
   return Math.max(0, Math.round((basePrice - value) * 100) / 100);
 }
+
+// ─── Helper: build a SaveDetail from product + variant + state ────────────────
+
+function buildSaveDetail(
+  product: Product1,
+  variant: ProductVariant,
+  s: RowState
+): SaveDetail {
+  return {
+    productId:         product.id,
+    variantId:         variant.id,
+    newStock:          s.newStock,
+    newPrice:          s.newPrice,
+    newDiscount:       s.discountValue,
+    discountType:      s.discountType,
+    isDiscountPercent: s.discountType === "%",
+  };
+}
+
+// ─── NumericField ──────────────────────────────────────────────────────────────
+// Fixes the leading-zero problem:
+//   • Uses type="text" so the browser doesn't add spin arrows or enforce number formatting
+//   • Tracks a local `display` string so the vendor can freely delete and retype
+//   • On focus → selects all text (vendor just starts typing their number)
+//   • On blur  → parses and commits; empty/invalid falls back to 0
+//   • Parent numeric value syncs the display whenever it changes externally (reset/discard)
+
+interface NumericFieldProps {
+  value: number;                          // controlled numeric value from parent
+  disabled?: boolean;
+  min?: number;
+  inputStyle?: React.CSSProperties;       // passed straight to the <input> element
+  startAdornment?: React.ReactNode;
+  endAdornment?: React.ReactNode;
+  sx?: object;
+  onChange: (committed: number) => void;  // called with parsed number on every valid keystroke & blur
+}
+
+const NumericField = ({
+  value,
+  disabled,
+  min = 0,
+  inputStyle,
+  startAdornment,
+  endAdornment,
+  sx,
+  onChange,
+}: NumericFieldProps) => {
+  const [display, setDisplay] = useState<string>(value === 0 ? "0" : String(value));
+  const committedRef = useRef<number>(value);
+
+  // Sync display when parent resets/discards the value externally
+  if (committedRef.current !== value) {
+    committedRef.current = value;
+    setDisplay(value === 0 ? "0" : String(value));
+  }
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Select all → vendor just types the new number without needing to delete first
+    e.target.select();
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+
+    // Allow: empty string (mid-delete), digits, one decimal point
+    if (raw === "" || /^\d*\.?\d*$/.test(raw)) {
+      setDisplay(raw);
+      // Notify parent while typing so the row shows "Edited" immediately
+      const parsed = parseFloat(raw);
+      if (!isNaN(parsed)) {
+        const safe = Math.max(min, parsed);
+        committedRef.current = safe;
+        onChange(safe);
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    // Commit: empty or invalid → fall back to min (usually 0)
+    const parsed = parseFloat(display);
+    const committed = isNaN(parsed) ? min : Math.max(min, parsed);
+    committedRef.current = committed;
+    setDisplay(String(committed));
+    onChange(committed);
+  };
+
+  return (
+    <TextField
+      type="text"
+      inputMode="decimal"
+      size="small"
+      disabled={disabled}
+      value={display}
+      onFocus={handleFocus}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      slotProps={{
+        htmlInput: { style: inputStyle },
+        input: {
+          startAdornment: startAdornment
+            ? <InputAdornment position="start">{startAdornment}</InputAdornment>
+            : undefined,
+          endAdornment: endAdornment
+            ? <InputAdornment position="end">{endAdornment}</InputAdornment>
+            : undefined,
+        },
+      }}
+      sx={sx}
+    />
+  );
+};
 
 // ─── Sub-component: product avatar with hover preview (desktop) ───────────────
 
@@ -257,12 +371,12 @@ const EditDialog = ({
             <Box component="img" src={imageUrl} alt={product.name} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : (
             <Box sx={{ textAlign: "center", color: "text.disabled" }}>
-              <ImageIcon sx={{ fontSize: 48 }} />
-              <Small fontWeight={700} display="block" mt={0.5}>No image</Small>
+              <ImageIcon sx={{ fontSize: 48, mb: 1 }} />
+              <Small fontWeight={700}>No image available</Small>
             </Box>
           )}
           {product.brand && (
-            <Box sx={{ position: "absolute", top: 10, left: 10, bgcolor: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 10, fontWeight: 800, px: 0.75, py: 0.3, borderRadius: 1, backdropFilter: "blur(4px)" }}>
+            <Box sx={{ position: "absolute", top: 10, left: 10, bgcolor: "rgba(0,0,0,0.6)", color: "#fff", fontSize: 11, fontWeight: 800, px: 1, py: 0.4, borderRadius: 1.5, backdropFilter: "blur(4px)" }}>
               {product.brand}
             </Box>
           )}
@@ -277,8 +391,7 @@ const EditDialog = ({
             <Box flex={1}>
               <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>Current</Small>
               <Span
-                fontWeight={800}
-                fontSize={15}
+                fontWeight={800} fontSize={15}
                 color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "success.main"}
               >
                 {variant.units === 0 ? "Out of stock" : variant.units}
@@ -286,11 +399,12 @@ const EditDialog = ({
             </Box>
             <Box flex={1}>
               <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>New</Small>
-              <TextField
-                size="small" type="number" fullWidth disabled={isSaving}
+              {/* ✅ NumericField — no leading zero problem */}
+              <NumericField
                 value={state.newStock}
-                slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                onChange={(e) => onPatch({ newStock: Math.max(0, Number(e.target.value)), status: "edited" })}
+                disabled={isSaving}
+                sx={{ width: "100%" }}
+                onChange={(num) => onPatch({ newStock: num, status: "edited" })}
               />
             </Box>
           </FlexBox>
@@ -311,14 +425,13 @@ const EditDialog = ({
             </Box>
             <Box flex={1}>
               <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.5 }}>New</Small>
-              <TextField
-                size="small" type="number" fullWidth disabled={isSaving}
+              {/* ✅ NumericField — no leading zero problem */}
+              <NumericField
                 value={state.newPrice}
-                slotProps={{
-                  htmlInput: { min: 0, step: 0.01 },
-                  input: { startAdornment: (<InputAdornment position="start"><Small fontWeight={900} color="text.disabled" fontSize={11}>LKR</Small></InputAdornment>) },
-                }}
-                onChange={(e) => onPatch({ newPrice: Math.max(0, Number(e.target.value)), status: "edited" })}
+                disabled={isSaving}
+                startAdornment={<Small fontWeight={900} color="text.disabled" fontSize={11}>LKR</Small>}
+                sx={{ width: "100%" }}
+                onChange={(num) => onPatch({ newPrice: num, status: "edited" })}
               />
             </Box>
           </FlexBox>
@@ -331,54 +444,43 @@ const EditDialog = ({
           </Small>
 
           {savedDiscount > 0 ? (
-            <Small display="block" mb={1.25} fontWeight={800} fontSize={11} color="success.main" sx={{ textTransform: "uppercase" }}>
-              Current: {savedDiscount}{savedDiscType}
+            <Small display="block" mb={1} fontWeight={700} color="success.main">
+              Current: {savedDiscount}{savedDiscType} off
             </Small>
           ) : (
-            <Small display="block" mb={1.25} fontWeight={700} fontSize={11} color="text.disabled">
-              No current discount
-            </Small>
+            <Small display="block" mb={1} color="text.disabled" fontWeight={700}>No current discount</Small>
           )}
 
-          <FlexBox alignItems="stretch" gap={1.5}>
-            {/* % / LKR toggle buttons stacked vertically */}
-            <Box display="flex" flexDirection="column" gap={0.75}>
-              {(["%", "LKR"] as DiscountType[]).map((opt) => (
-                <Button
-                  key={opt}
-                  size="small"
-                  variant={state.discountType === opt ? "contained" : "outlined"}
-                  disabled={isSaving}
-                  onClick={() => onPatch({
-                    discountType: opt,
-                    status: state.discountValue > 0 || state.newStock !== variant.units || state.newPrice !== variant.price ? "edited" : "idle",
-                  })}
-                  sx={{ minWidth: 52, py: 0.5, px: 1, fontWeight: 900, fontSize: 12, lineHeight: 1 }}
+          <FlexBox gap={1} alignItems="center">
+            {/* Type toggle */}
+            <Box sx={{ display: "flex", border: "1.5px solid", borderColor: "divider", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+              {(["%", "LKR"] as DiscountType[]).map((t) => (
+                <Box
+                  key={t}
+                  onClick={() => !isSaving && onPatch({ discountType: t, status: "edited" })}
+                  sx={{
+                    px: 1.5, py: 0.75, fontSize: 12, fontWeight: 800, cursor: isSaving ? "default" : "pointer",
+                    bgcolor: state.discountType === t ? "primary.main" : "transparent",
+                    color: state.discountType === t ? "#fff" : "text.secondary",
+                    transition: "all 0.15s",
+                    opacity: isSaving ? 0.5 : 1,
+                  }}
                 >
-                  {opt}
-                </Button>
+                  {t}
+                </Box>
               ))}
             </Box>
-
-            {/* Discount value input */}
-            <TextField
-              size="small" type="number" disabled={isSaving}
-              placeholder="0"
-              value={state.discountValue || ""}
-              fullWidth
-              slotProps={{
-                htmlInput: { min: 0, max: state.discountType === "%" ? 100 : undefined, step: state.discountType === "%" ? 0.1 : 1 },
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <Small fontWeight={900} color="text.disabled" fontSize={11}>{state.discountType}</Small>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              onChange={(e) => {
-                const val = Math.max(0, Number(e.target.value));
-                onPatch({ discountValue: val, status: val > 0 || state.newStock !== variant.units || state.newPrice !== variant.price ? "edited" : "idle" });
+            {/* ✅ NumericField — no leading zero problem */}
+            <NumericField
+              value={state.discountValue}
+              disabled={isSaving}
+              endAdornment={<Small fontWeight={900} color="text.disabled" fontSize={11}>{state.discountType}</Small>}
+              sx={{ flex: 1 }}
+              onChange={(val) => {
+                onPatch({
+                  discountValue: val,
+                  status: val > 0 || state.newStock !== variant.units || state.newPrice !== variant.price ? "edited" : "idle",
+                });
               }}
             />
           </FlexBox>
@@ -525,11 +627,13 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const { enqueueSnackbar } = useSnackbar();
 
   const { data, isLoading } = useGetVendorProductsQuery(
-    { userId, storeId },
-    { skip: !userId || !storeId }
+    { storeId },
+    { skip: !storeId }
   );
 
-  const [updateVariant] = useUpdateProductVariantMutation();
+  // ✅ Single mutation used for both single-save and save-all
+  const [bulkSave] = useBulkSaveVariantsMutation();
+
   const products: Product1[] = data?.data ?? [];
 
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
@@ -592,25 +696,18 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
     [getState]
   );
 
-  // ── Save single row ───────────────────────────────────────────────────────────
+  // ── Save single row → 1 item in listUpdateDetails[] ──────────────────────────
 
   const saveRow = useCallback(
     async (product: Product1, variant: ProductVariant) => {
       const s = getState(variant);
       const defaults = makeDefaults(variant);
       patchState(variant.id, defaults, { status: "saving" });
+
       try {
-        await updateVariant({
-          userId,
+        await bulkSave({
           storeId,
-          productId: product.id,
-          variantId: variant.id,
-          body: {
-            units:        s.newStock,
-            price:        s.newPrice,
-            discount:     s.discountValue,
-            discountType: s.discountType,
-          },
+          items: [buildSaveDetail(product, variant, s)],
         }).unwrap();
 
         setRowStates((prev) => {
@@ -621,13 +718,14 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
         enqueueSnackbar(`"${product.name}" saved successfully`, { variant: "success" });
         setEditTarget(null);
-      } catch {
+      } catch (err) {
+        console.error("[saveRow] failed:", err);
         patchState(variant.id, defaults, { status: "error" });
         enqueueSnackbar("Save failed. Please try again.", { variant: "error" });
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getState, patchState, updateVariant, userId, storeId, enqueueSnackbar]
+    [getState, patchState, bulkSave, storeId, enqueueSnackbar]
   );
 
   // ── Flat rows ─────────────────────────────────────────────────────────────────
@@ -639,12 +737,47 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
     [products]
   );
 
-  // ── Save all / Discard all ────────────────────────────────────────────────────
+  // ── Save all → ONE request with all changed items in listUpdateDetails[] ──────
 
   const saveAll = async () => {
     const edited = flatRows.filter(({ variant }) => isChanged(variant));
     if (!edited.length) { enqueueSnackbar("No changes to save.", { variant: "info" }); return; }
-    await Promise.all(edited.map(({ product, variant }) => saveRow(product, variant)));
+
+    // Mark all as saving
+    setRowStates((prev) => {
+      const next = { ...prev };
+      for (const { variant } of edited) {
+        if (next[variant.id]) next[variant.id] = { ...next[variant.id], status: "saving" };
+      }
+      return next;
+    });
+
+    try {
+      await bulkSave({
+        storeId,
+        items: edited.map(({ product, variant }) =>
+          buildSaveDetail(product, variant, getState(variant))
+        ),
+      }).unwrap();
+
+      setRowStates((prev) => {
+        const next = { ...prev };
+        for (const { variant } of edited) delete next[variant.id];
+        return next;
+      });
+
+      enqueueSnackbar(`${edited.length} product${edited.length !== 1 ? "s" : ""} saved successfully`, { variant: "success" });
+    } catch (err) {
+      console.error("[saveAll] failed:", err);
+      setRowStates((prev) => {
+        const next = { ...prev };
+        for (const { variant } of edited) {
+          if (next[variant.id]) next[variant.id] = { ...next[variant.id], status: "error" };
+        }
+        return next;
+      });
+      enqueueSnackbar("Bulk save failed. Please try again.", { variant: "error" });
+    }
   };
 
   const discardAll = () => {
@@ -674,7 +807,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
   const lowStock    = flatRows.filter(({ variant }) => variant.units > 0 && variant.units <= 5).length;
 
   // Edit dialog handlers
-  const editState = editTarget ? getState(editTarget.variant) : null;
+  const editState    = editTarget ? getState(editTarget.variant) : null;
   const editDefaults = editTarget ? makeDefaults(editTarget.variant) : null;
 
   const handleEditPatch = (patch: Partial<RowState>) => {
@@ -796,22 +929,12 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
       {/* ── DESKTOP: Table (hidden on xs/sm) ── */}
       <Card sx={{ borderRadius: 3, border: "1px solid", borderColor: "divider", boxShadow: "none", overflow: "hidden", display: { xs: "none", md: "block" } }}>
         <TableContainer>
-          <Table sx={{ minWidth: 1050 }}>
+          <Table>
             <TableHead>
               <TableRow sx={{ bgcolor: "grey.50" }}>
-                {[
-                  { label: "Product",     minWidth: 280 },
-                  { label: "Stock",       minWidth: 220 },
-                  { label: "Price (LKR)", minWidth: 260 },
-                  { label: "Discount",    minWidth: 200 },
-                  { label: "Status",      minWidth: 130 },
-                  { label: "Actions",     minWidth: 100, align: "right" as const },
-                ].map((col) => (
-                  <TableCell
-                    key={col.label} align={col.align}
-                    sx={{ minWidth: col.minWidth, fontWeight: 900, fontSize: 11, textTransform: "uppercase", letterSpacing: ".4px", color: "text.secondary", borderBottom: "1.5px solid", borderColor: "divider", py: 1.5 }}
-                  >
-                    {col.label}
+                {["Product", "Stock", "Price (LKR)", "Discount", "Status", "Actions"].map((h) => (
+                  <TableCell key={h} sx={{ fontWeight: 900, fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "text.secondary", py: 1.5 }}>
+                    {h}
                   </TableCell>
                 ))}
               </TableRow>
@@ -821,7 +944,7 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
               {isLoading && [...Array(5)].map((_, i) => (
                 <TableRow key={i}>
                   {[...Array(6)].map((__, j) => (
-                    <TableCell key={j}><Skeleton variant="rounded" height={36} /></TableCell>
+                    <TableCell key={j}><Skeleton variant="rounded" height={40} /></TableCell>
                   ))}
                 </TableRow>
               ))}
@@ -843,21 +966,20 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
                 const discountPreviewPrice =
                   s.discountValue > 0
-                    ? applyDiscount(variant.price, s.discountType, s.discountValue)
+                    ? applyDiscount(s.newPrice, s.discountType, s.discountValue)
                     : null;
 
-                const savedDiscount  = variant.discount ?? 0;
-                const savedDiscType  = (variant.discountType as DiscountType) ?? "%";
-
                 return (
-                  <TableRow key={variant.id} sx={{ "&:hover": { bgcolor: "grey.50" } }}>
-
+                  <TableRow
+                    key={variant.id}
+                    sx={{ "&:hover": { bgcolor: "grey.50" }, transition: "background 0.15s" }}
+                  >
                     {/* ── Product ── */}
                     <TableCell>
                       <FlexBox alignItems="center" gap={1.5}>
                         <ProductAvatarWithPreview product={product} variant={variant} />
-                        <Box overflow="hidden">
-                          <H6 fontWeight={800} fontSize={13.5} noWrap title={product.name}>{product.name}</H6>
+                        <Box>
+                          <H6 fontWeight={800} fontSize={13}>{product.name}</H6>
                           <Small color="text.disabled" fontWeight={700}>{variant.sku ?? "—"}</Small>
                         </Box>
                       </FlexBox>
@@ -865,20 +987,24 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
                     {/* ── Stock ── */}
                     <TableCell>
-                      <FlexBox alignItems="flex-end" gap={2}>
-                        <Box minWidth={60}>
-                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>Current</Small>
-                          <Span fontWeight={800} color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "success.main"}>
-                            {variant.units === 0 ? "Out of stock" : variant.units}
+                      <FlexBox alignItems="center" gap={2}>
+                        <Box>
+                          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.25 }}>Current</Small>
+                          <Span
+                            fontWeight={800} fontSize={14}
+                            color={variant.units === 0 ? "error.main" : variant.units <= 5 ? "warning.main" : "text.primary"}
+                          >
+                            {variant.units}
                           </Span>
                         </Box>
                         <Box>
-                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>New</Small>
-                          <TextField
-                            size="small" type="number" disabled={isSaving} value={s.newStock}
-                            slotProps={{ htmlInput: { min: 0, step: 1 } }}
-                            onChange={(e) => patchState(variant.id, defaults, { newStock: Math.max(0, Number(e.target.value)), status: "edited" })}
-                            sx={{ width: 90 }}
+                          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.25 }}>New</Small>
+                          {/* ✅ NumericField — vendor types freely, no leading zero */}
+                          <NumericField
+                            value={s.newStock}
+                            disabled={isSaving}
+                            inputStyle={{ width: 64, fontWeight: 800, padding: "5px 8px" }}
+                            onChange={(num) => patchState(variant.id, defaults, { newStock: num, status: "edited" })}
                           />
                         </Box>
                       </FlexBox>
@@ -886,24 +1012,22 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
 
                     {/* ── Price ── */}
                     <TableCell>
-                      <FlexBox alignItems="flex-end" gap={2}>
-                        <Box minWidth={90}>
-                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>Current</Small>
-                          <Span fontWeight={800}>
-                            <Box component="span" sx={{ color: "text.disabled", fontWeight: 900, fontSize: 11, mr: 0.5 }}>LKR</Box>
-                            {variant.price.toLocaleString("en-LK")}
+                      <FlexBox alignItems="center" gap={2}>
+                        <Box>
+                          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.25 }}>Current</Small>
+                          <Span fontWeight={700} fontSize={13} color="text.secondary">
+                            LKR {variant.price.toLocaleString("en-LK")}
                           </Span>
                         </Box>
                         <Box>
-                          <Small color="text.disabled" fontWeight={800} display="block" mb={0.5} sx={{ textTransform: "uppercase", fontSize: 10.5 }}>New</Small>
-                          <TextField
-                            size="small" type="number" disabled={isSaving} value={s.newPrice}
-                            slotProps={{
-                              htmlInput: { min: 0, step: 0.01 },
-                              input: { startAdornment: (<InputAdornment position="start"><Small fontWeight={900} color="text.disabled" fontSize={11}>LKR</Small></InputAdornment>) },
-                            }}
-                            onChange={(e) => patchState(variant.id, defaults, { newPrice: Math.max(0, Number(e.target.value)), status: "edited" })}
-                            sx={{ width: 140 }}
+                          <Small color="text.disabled" fontWeight={800} sx={{ textTransform: "uppercase", fontSize: 10, display: "block", mb: 0.25 }}>New</Small>
+                          {/* ✅ NumericField — vendor types freely, no leading zero */}
+                          <NumericField
+                            value={s.newPrice}
+                            disabled={isSaving}
+                            startAdornment={<Small fontWeight={700} color="text.disabled" fontSize={10}>LKR</Small>}
+                            inputStyle={{ width: 90, fontWeight: 800, padding: "5px 4px" }}
+                            onChange={(num) => patchState(variant.id, defaults, { newPrice: num, status: "edited" })}
                           />
                         </Box>
                       </FlexBox>
@@ -912,60 +1036,41 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                     {/* ── Discount ── */}
                     <TableCell>
                       <Box>
-                        {savedDiscount > 0 ? (
-                          <Small display="block" mb={0.75} fontWeight={800} fontSize={10.5} color="success.main" sx={{ textTransform: "uppercase" }}>
-                            Current: {savedDiscount}{savedDiscType}
-                          </Small>
-                        ) : (
-                          <Small display="block" mb={0.75} fontWeight={700} fontSize={10.5} color="text.disabled">
-                            No discount
+                        {(variant.discount ?? 0) > 0 && (
+                          <Small color="success.main" fontWeight={800} display="block" mb={0.5} fontSize={11}>
+                            CURRENT: {variant.discount}{variant.discountType ?? "%"}
                           </Small>
                         )}
-
-                        <FlexBox alignItems="stretch" gap={1}>
-                          <Box display="flex" flexDirection="column" gap={0.5}>
-                            {(["%", "LKR"] as DiscountType[]).map((opt) => (
-                              <Button
-                                key={opt}
-                                size="small"
-                                variant={s.discountType === opt ? "contained" : "outlined"}
-                                disabled={isSaving}
-                                onClick={() => {
-                                  if (s.discountType === opt) return;
-                                  patchState(variant.id, defaults, {
-                                    discountType: opt,
-                                    status: s.discountValue > 0 || s.newStock !== variant.units || s.newPrice !== variant.price ? "edited" : "idle",
-                                  });
+                        <FlexBox alignItems="center" gap={0.75}>
+                          {/* Type toggle */}
+                          <Box sx={{ display: "flex", border: "1.5px solid", borderColor: "divider", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+                            {(["%", "LKR"] as DiscountType[]).map((t) => (
+                              <Box
+                                key={t}
+                                onClick={() => !isSaving && patchState(variant.id, defaults, { discountType: t, status: "edited" })}
+                                sx={{
+                                  px: 1, py: 0.4, fontSize: 11, fontWeight: 800,
+                                  cursor: isSaving ? "default" : "pointer",
+                                  bgcolor: s.discountType === t ? "primary.main" : "transparent",
+                                  color: s.discountType === t ? "#fff" : "text.secondary",
+                                  transition: "all 0.15s", userSelect: "none",
                                 }}
-                                sx={{ minWidth: 46, py: 0.3, px: 0.75, fontWeight: 900, fontSize: 11, lineHeight: 1 }}
                               >
-                                {opt}
-                              </Button>
+                                {t}
+                              </Box>
                             ))}
                           </Box>
-
-                          <TextField
-                            size="small" type="number" disabled={isSaving}
-                            placeholder="0"
-                            value={s.discountValue || ""}
-                            slotProps={{
-                              htmlInput: { min: 0, max: s.discountType === "%" ? 100 : undefined, step: s.discountType === "%" ? 0.1 : 1 },
-                              input: {
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <Small fontWeight={900} color="text.disabled" fontSize={11}>{s.discountType}</Small>
-                                  </InputAdornment>
-                                ),
-                              },
-                            }}
-                            onChange={(e) => {
-                              const val = Math.max(0, Number(e.target.value));
-                              patchState(variant.id, defaults, {
-                                discountValue: val,
-                                status: val > 0 || s.newStock !== variant.units || s.newPrice !== variant.price ? "edited" : "idle",
-                              });
-                            }}
+                          {/* ✅ NumericField — vendor types freely, no leading zero */}
+                          <NumericField
+                            value={s.discountValue}
+                            disabled={isSaving}
+                            endAdornment={<Small fontWeight={700} color="text.disabled" fontSize={10}>{s.discountType}</Small>}
+                            inputStyle={{ width: 52, fontWeight: 800, padding: "5px 4px" }}
                             sx={{ width: 110 }}
+                            onChange={(num) => patchState(variant.id, defaults, {
+                              discountValue: num,
+                              status: "edited",
+                            })}
                           />
                         </FlexBox>
 
@@ -998,29 +1103,25 @@ const VendorProductManagementPageView = ({ userId, storeId }: Props) => {
                           Save
                         </LoadingButton>
                         <IconButton
-  size="small"
-  disabled={isSaving || !changed}
-  onClick={() => patchState(variant.id, defaults, {
-    newStock:      defaults.units,
-    newPrice:      defaults.price,
-    discountType:  defaults.discountType,
-    discountValue: defaults.discount,
-    status: "idle",
-  })}
-  title="Reset changes"
-  sx={{
-    border: "1px solid",
-    borderColor: isSaving || !changed ? "divider" : "error.main",
-    color: isSaving || !changed ? "text.disabled" : "error.main",
-    "&:hover": {
-      bgcolor: "error.main",
-      color: "#fff",
-      borderColor: "error.main",
-    },
-  }}
->
-  <ReplayIcon fontSize="small" />
-</IconButton>
+                          size="small"
+                          disabled={isSaving || !changed}
+                          onClick={() => patchState(variant.id, defaults, {
+                            newStock:      defaults.units,
+                            newPrice:      defaults.price,
+                            discountType:  defaults.discountType,
+                            discountValue: defaults.discount,
+                            status: "idle",
+                          })}
+                          title="Reset changes"
+                          sx={{
+                            border: "1px solid",
+                            borderColor: isSaving || !changed ? "divider" : "error.main",
+                            color: isSaving || !changed ? "text.disabled" : "error.main",
+                            "&:hover": { bgcolor: "error.main", color: "#fff", borderColor: "error.main" },
+                          }}
+                        >
+                          <ReplayIcon fontSize="small" />
+                        </IconButton>
                       </FlexBox>
                     </TableCell>
 
