@@ -6,26 +6,47 @@ import Card from "@mui/material/Card";
 import Grid from "@mui/material/Grid";
 import Skeleton from "@mui/material/Skeleton";
 import Chip from "@mui/material/Chip";
-import Divider from "@mui/material/Divider";
+import Avatar from "@mui/material/Avatar";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import InventoryIcon from "@mui/icons-material/Inventory";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
+import HourglassTopIcon from "@mui/icons-material/HourglassTop";
 import { H3, H6, Paragraph, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
 import { useGetStoresQuery } from "services/vendor-api";
+import { StoreInfo } from "services/vendor-api";
+
+// ─── Proxy logo URL through our own Next.js server ───────────────────────────
+function proxyLogo(url: string | null): string | undefined {
+  if (!url) return undefined;
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
+// ─── Status config ────────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: "success" | "error" | "warning" | "default"; Icon: any }
+> = {
+  PUBLISHED:   { label: "Published",   color: "success", Icon: CheckCircleOutlineIcon  },
+  UNPUBLISHED: { label: "Unpublished", color: "error",   Icon: PauseCircleOutlineIcon  },
+  APPROVED:    { label: "Approved",    color: "warning", Icon: HourglassTopIcon         },
+};
+
+function getStatusConfig(status: string) {
+  return STATUS_CONFIG[status] ?? { label: status, color: "default", Icon: StorefrontIcon };
+}
 
 // ─── Store Card ───────────────────────────────────────────────────────────────
 interface StoreCardProps {
-  storeId: string;
-  productCount: number;
-  index: number;
+  store: StoreInfo;
   onClick: () => void;
 }
 
-const StoreCard = ({ storeId, productCount, index, onClick }: StoreCardProps) => {
-  // Truncate storeId for display: show first 8 and last 4 chars
-  const shortId = `${storeId.slice(0, 8)}…${storeId.slice(-4)}`;
+const StoreCard = ({ store, onClick }: StoreCardProps) => {
+  const { storeName, storeCode, storeDescription, storeLogo, storeStatus, productCount } = store;
+  const { label: statusLabel, color: statusColor, Icon: StatusIcon } = getStatusConfig(storeStatus);
 
   return (
     <Card
@@ -38,21 +59,20 @@ const StoreCard = ({ storeId, productCount, index, onClick }: StoreCardProps) =>
         boxShadow: "none",
         cursor: "pointer",
         transition: "all 0.18s ease",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
         "&:hover": {
           borderColor: "primary.main",
           boxShadow: "0 4px 20px rgba(220,38,38,0.10)",
           transform: "translateY(-2px)",
-          "& .arrow-icon": { opacity: 1, transform: "translateX(0)" },
-          "& .store-icon": { color: "primary.main" },
         },
         position: "relative",
         overflow: "hidden",
         "&::before": {
           content: '""',
           position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
+          top: 0, left: 0, right: 0,
           height: "3px",
           bgcolor: "primary.main",
           opacity: 0,
@@ -61,112 +81,128 @@ const StoreCard = ({ storeId, productCount, index, onClick }: StoreCardProps) =>
         "&:hover::before": { opacity: 1 },
       }}
     >
-      {/* Header row */}
-      <FlexBetween mb={2}>
-        <FlexBox alignItems="center" gap={1.5}>
-          <Box
+      {/* Header: logo + store name + store code */}
+      <FlexBox alignItems="flex-start" gap={1.5} mb={1.5}>
+        <Avatar
+          src={proxyLogo(storeLogo)}
+          variant="rounded"
+          imgProps={{ onError: (e: any) => { e.target.style.display = "none"; } }}
+          sx={{
+            width: 48,
+            height: 48,
+            borderRadius: 2,
+            bgcolor: "grey.100",
+            border: "1px solid",
+            borderColor: "divider",
+            flexShrink: 0,
+          }}
+        >
+          <StorefrontIcon sx={{ fontSize: 22, color: "text.disabled" }} />
+        </Avatar>
+
+        <Box flex={1} minWidth={0}>
+          <Small
+            fontWeight={800}
+            color="text.disabled"
+            sx={{ fontSize: 10, textTransform: "uppercase", letterSpacing: ".5px", display: "block", mb: 0.3 }}
+          >
+            {storeCode}
+          </Small>
+          <H6
+            fontWeight={900}
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 2,
-              bgcolor: "grey.100",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
+              fontSize: 14,
+              lineHeight: 1.3,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
-            <StorefrontIcon
-              className="store-icon"
-              sx={{ fontSize: 20, color: "text.disabled", transition: "color 0.18s" }}
-            />
-          </Box>
-          <Box>
+            {storeName || "—"}
+          </H6>
+          {storeDescription && (
             <Small
-              fontWeight={800}
-              color="text.disabled"
-              sx={{ textTransform: "uppercase", fontSize: 9.5, letterSpacing: ".5px", display: "block" }}
+              color="text.secondary"
+              sx={{
+                fontSize: 11,
+                display: "block",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
             >
-              Store #{String(index + 1).padStart(2, "0")}
+              {storeDescription}
             </Small>
-            <H6 fontWeight={800} fontSize={13} sx={{ fontFamily: "monospace", letterSpacing: ".3px" }}>
-              {shortId}
-            </H6>
-          </Box>
+          )}
+        </Box>
+      </FlexBox>
+
+      {/* Divider */}
+      <Box sx={{ height: "1px", bgcolor: "divider", mx: -0.5, mb: 1.5 }} />
+
+      {/* Status + product count */}
+      <FlexBetween mt="auto">
+        <FlexBox alignItems="center" gap={0.5}>
+          <InventoryIcon sx={{ fontSize: 15, color: "text.disabled" }} />
+          <Small fontWeight={700} color="text.secondary" fontSize={12}>
+            {productCount} {productCount === 1 ? "product" : "products"}
+          </Small>
         </FlexBox>
 
-        <ArrowForwardIcon
-          className="arrow-icon"
-          sx={{
-            fontSize: 18,
-            color: "primary.main",
-            opacity: 0,
-            transform: "translateX(-4px)",
-            transition: "all 0.18s ease",
-          }}
-        />
-      </FlexBetween>
-
-      <Divider sx={{ mb: 2 }} />
-
-      {/* Stats */}
-      <FlexBox alignItems="center" gap={1}>
-        <InventoryIcon sx={{ fontSize: 15, color: "text.disabled" }} />
-        <Small fontWeight={700} color="text.secondary">
-          {productCount} product{productCount !== 1 ? "s" : ""}
-        </Small>
-        <Box flex={1} />
         <Chip
-          label="Manage →"
           size="small"
-          color="primary"
+          icon={<StatusIcon sx={{ fontSize: "13px !important" }} />}
+          label={statusLabel}
+          color={statusColor}
+          variant={storeStatus === "PUBLISHED" ? "filled" : "outlined"}
           sx={{
             fontWeight: 800,
             fontSize: 10.5,
             height: 22,
-            bgcolor: "primary.main",
-            "& .MuiChip-label": { px: 1 },
+            "& .MuiChip-label": { px: 0.75 },
+            "& .MuiChip-icon": { ml: 0.5 },
           }}
         />
-      </FlexBox>
+      </FlexBetween>
 
-      {/* Full storeId tooltip */}
-      <Box
-        mt={1.5}
+      {/* Manage button */}
+      <Chip
+        label="Manage →"
+        size="small"
+        color="primary"
         sx={{
-          bgcolor: "grey.50",
+          mt: 1.5,
+          width: "100%",
+          fontWeight: 800,
+          fontSize: 11,
+          height: 26,
           borderRadius: 1.5,
-          px: 1,
-          py: 0.5,
-          border: "1px solid",
-          borderColor: "divider",
+          cursor: "pointer",
+          bgcolor: "primary.main",
+          "& .MuiChip-label": { px: 1 },
         }}
-      >
-        <Small
-          fontWeight={600}
-          color="text.disabled"
-          sx={{ fontFamily: "monospace", fontSize: 10, wordBreak: "break-all", display: "block" }}
-        >
-          {storeId}
-        </Small>
-      </Box>
+      />
     </Card>
   );
 };
 
-// ─── Skeleton Card ────────────────────────────────────────────────────────────
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
 const StoreCardSkeleton = () => (
   <Card sx={{ p: 2.5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none" }}>
-    <FlexBox alignItems="center" gap={1.5} mb={2}>
-      <Skeleton variant="rounded" width={40} height={40} sx={{ borderRadius: 2, flexShrink: 0 }} />
+    <FlexBox alignItems="center" gap={1.5} mb={1.5}>
+      <Skeleton variant="rounded" width={48} height={48} sx={{ borderRadius: 2, flexShrink: 0 }} />
       <Box flex={1}>
-        <Skeleton variant="text" width="40%" height={14} sx={{ mb: 0.5 }} />
+        <Skeleton variant="text" width="35%" height={12} sx={{ mb: 0.5 }} />
         <Skeleton variant="text" width="70%" height={18} />
+        <Skeleton variant="text" width="50%" height={14} />
       </Box>
     </FlexBox>
-    <Skeleton variant="text" height={1} sx={{ mb: 2 }} />
-    <Skeleton variant="rounded" height={28} sx={{ borderRadius: 1.5 }} />
-    <Skeleton variant="rounded" height={28} sx={{ borderRadius: 1.5, mt: 1.5 }} />
+    <Skeleton variant="text" height={1} sx={{ mb: 1.5 }} />
+    <FlexBetween>
+      <Skeleton variant="rounded" width={80} height={20} sx={{ borderRadius: 1 }} />
+      <Skeleton variant="rounded" width={80} height={20} sx={{ borderRadius: 2 }} />
+    </FlexBetween>
+    <Skeleton variant="rounded" height={26} sx={{ borderRadius: 1.5, mt: 1.5 }} />
   </Card>
 );
 
@@ -177,6 +213,7 @@ export default function StoreSelectionPage() {
 
   const stores = data?.stores ?? [];
   const totalProducts = data?.totalProducts ?? 0;
+  const totalStores   = data?.totalStores   ?? stores.length;
 
   return (
     <Box sx={{ maxWidth: 1100, mx: "auto", px: { xs: 2, md: 4 }, py: 5 }}>
@@ -193,7 +230,7 @@ export default function StoreSelectionPage() {
         {!isLoading && stores.length > 0 && (
           <FlexBox gap={1.5} mt={2} flexWrap="wrap">
             <Chip
-              label={`${stores.length} Store${stores.length !== 1 ? "s" : ""}`}
+              label={`${totalStores} Store${totalStores !== 1 ? "s" : ""}`}
               size="small"
               sx={{ fontWeight: 800, bgcolor: "grey.100", fontSize: 12 }}
             />
@@ -208,18 +245,9 @@ export default function StoreSelectionPage() {
         )}
       </Box>
 
-      {/* Error state */}
+      {/* Error */}
       {isError && (
-        <Card
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            border: "1.5px solid",
-            borderColor: "error.main",
-            boxShadow: "none",
-            textAlign: "center",
-          }}
-        >
+        <Card sx={{ p: 4, borderRadius: 3, border: "1.5px solid", borderColor: "error.main", boxShadow: "none", textAlign: "center" }}>
           <ErrorOutlineIcon sx={{ fontSize: 40, color: "error.main", mb: 1 }} />
           <H6 fontWeight={800} mb={0.5}>Failed to load stores</H6>
           <Paragraph color="text.secondary" fontSize={13}>
@@ -228,50 +256,32 @@ export default function StoreSelectionPage() {
         </Card>
       )}
 
-      {/* Store grid */}
+      {/* Grid */}
       <Grid container spacing={2.5}>
-        {isLoading &&
-          [...Array(6)].map((_, i) => (
-            <Grid item xs={12} sm={6} md={4} key={i}>
-              <StoreCardSkeleton />
-            </Grid>
-          ))}
+        {isLoading && [...Array(6)].map((_, i) => (
+          <Grid item xs={12} sm={6} md={4} key={i}>
+            <StoreCardSkeleton />
+          </Grid>
+        ))}
 
-        {!isLoading &&
-          !isError &&
-          stores.length === 0 && (
-            <Grid item xs={12}>
-              <Card
-                sx={{
-                  p: 5,
-                  borderRadius: 3,
-                  border: "1.5px solid",
-                  borderColor: "divider",
-                  boxShadow: "none",
-                  textAlign: "center",
-                }}
-              >
-                <StorefrontIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1.5 }} />
-                <H6 fontWeight={800} mb={0.5}>No stores found</H6>
-                <Paragraph color="text.secondary" fontSize={13}>
-                  No stores with products were found in the system.
-                </Paragraph>
-              </Card>
-            </Grid>
-          )}
+        {!isLoading && !isError && stores.length === 0 && (
+          <Grid item xs={12}>
+            <Card sx={{ p: 5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none", textAlign: "center" }}>
+              <StorefrontIcon sx={{ fontSize: 48, color: "text.disabled", mb: 1.5 }} />
+              <H6 fontWeight={800} mb={0.5}>No stores found</H6>
+              <Paragraph color="text.secondary" fontSize={13}>No stores were found in the system.</Paragraph>
+            </Card>
+          </Grid>
+        )}
 
-        {!isLoading &&
-          !isError &&
-          stores.map((store, index) => (
-            <Grid item xs={12} sm={6} md={4} key={store.storeId}>
-              <StoreCard
-                storeId={store.storeId}
-                productCount={store.productCount}
-                index={index}
-                onClick={() => router.push(`/stores/${store.storeId}`)}
-              />
-            </Grid>
-          ))}
+        {!isLoading && !isError && stores.map((store) => (
+          <Grid item xs={12} sm={6} md={4} key={store.storeCode}>
+            <StoreCard
+              store={store}
+              onClick={() => router.push(`/stores/${store.storeUuid}`)}
+            />
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );

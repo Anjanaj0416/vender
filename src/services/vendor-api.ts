@@ -6,8 +6,14 @@ const IMAGE_BASE_URL = "https://intranet_vertical.sltds.lk/";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface StoreInfo {
-  storeId: string;
-  productCount: number;
+  storeId:          string;   // numeric string "01", "02", etc.
+  storeUuid:        string;   // real UUID used as path param for products
+  storeName:        string;
+  storeDescription: string;
+  storeLogo:        string | null;
+  storeCode:        string;   // "STORE #01"
+  storeStatus:      "PUBLISHED" | "UNPUBLISHED" | "APPROVED" | string;
+  productCount:     number;
 }
 
 export interface SaveDetail {
@@ -80,7 +86,9 @@ export const vendorApi = createApi({
   endpoints: (builder) => ({
 
     // ── List all stores ──────────────────────────────────────────────────────
-    getStores: builder.query<{ stores: StoreInfo[]; totalProducts: number }, void>({
+    getStores: builder.query<{
+      totalStores: number; stores: StoreInfo[]; totalProducts: number 
+}, void>({
       query: () => "/tradez/stores",
       providesTags: ["STORES"],
     }),
