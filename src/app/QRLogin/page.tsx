@@ -6,14 +6,15 @@ import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 
 // ─── TRADEZ SVG Logo ──────────────────────────────────────────────────────────
+// ─── TRADEZ Logo ──────────────────────────────────────────────────────────────
 function TradezLogo() {
   return (
-    <svg width="110" height="90" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="60,10 100,55 75,55" fill="#f5a623" />
-      <polygon points="20,55 60,10 45,55" fill="#f5a623" />
-      <polygon points="20,55 75,55 60,85 45,70" fill="#f0c040" />
-      <path d="M52,22 Q60,14 68,22" stroke="#c0392b" strokeWidth="4" fill="none" strokeLinecap="round" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/tradez-logo.png"
+      alt="TradeZ Logo"
+      style={{ width: "220px", height: "auto", display: "block", margin: "0 auto", mixBlendMode: "multiply" }}
+    />
   );
 }
 
@@ -56,10 +57,10 @@ function BackgroundShapes() {
 
 // ─── Error messages ───────────────────────────────────────────────────────────
 const ERROR_MESSAGES: Record<string, string> = {
-  QRTokenMissing:  "Invalid QR code — no token found. Please use the QR code provided by TRADEZ.",
-  QRAccessDenied:  "This QR code is not linked to an active vendor account.",
-  QRBackendError:  "Unable to reach the authentication server. Please try again.",
-  default:         "QR sign-in failed. Please try again or contact your administrator.",
+  QRTokenMissing: "Invalid QR code — no token found. Please use the QR code provided by TRADEZ.",
+  QRAccessDenied: "This QR code is not linked to an active vendor account.",
+  QRBackendError: "Unable to reach the authentication server. Please try again.",
+  default: "QR sign-in failed. Please try again or contact your administrator.",
 };
 
 // ─── Main content ─────────────────────────────────────────────────────────────
@@ -124,9 +125,7 @@ function QRLoginContent() {
         <div style={{ marginBottom: "8px", display: "flex", justifyContent: "center" }}>
           <TradezLogo />
         </div>
-        <div style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", fontSize: "11px", fontWeight: 700, letterSpacing: "3px", color: "#c0392b", textTransform: "uppercase", marginBottom: "28px" }}>
-          VENDOR PORTAL
-        </div>
+        
 
         {/* ── Loading / Redirecting state ── */}
         {(status === "loading" || status === "redirecting") && (
