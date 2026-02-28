@@ -15,7 +15,6 @@ async function callBackendAuth(user: any, account: any): Promise<boolean> {
   console.log(`  tokenId : ${tokenId ? tokenId.slice(0, 40) + "..." : "⚠️  MISSING"}`);
   console.log("  📦 Request JSON:", JSON.stringify({ email, tokenId: tokenId.slice(0, 20) + "..." }));
   console.log("========================================\n");
-  // ─────────────────────────────────────────────────────────────────────────
 
   // ── Attempt 1: POST ───────────────────────────────────────────────────────
   console.log("[auth] Attempt 1: POST with { email, tokenId }");
@@ -137,13 +136,16 @@ export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user, account }) {
+      // ── QR login sessions are handled entirely by /api/auth/qr-login ──
+      // They set the cookie directly and never go through NextAuth's signIn flow.
+      // Only Google OAuth goes through here.
       if (account?.provider !== "google") return false;
       const allowed = await callBackendAuth(user, account);
       return allowed || "/login?error=AccessDenied";
     },
 
     async jwt({ token, user }) {
-      // On first sign-in, persist backend data into the JWT
+      // On first sign-in (Google OAuth), persist backend data into the JWT
       if (user) {
         const bd = (user as any).backendData ?? {};
         token.vendorId    = bd.vendorId    ?? "";
@@ -152,6 +154,7 @@ export const authOptions: NextAuthOptions = {
         token.email       = bd.email       ?? user.email;
         token.picture     = bd.profilePictureUrl || user.image;
       }
+      // QR-login tokens already have these fields set — just pass them through
       return token;
     },
 

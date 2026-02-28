@@ -7,7 +7,8 @@ export async function proxy(request: NextRequest) {
   // ── Always allow these paths ───────────────────────────────────────────────
   const publicPaths = [
     "/login",
-    "/api/auth",
+    "/QRLogin",             // ← QR code landing page (matches QR code URL format)
+    "/api/auth",            // ← includes /api/auth/qr-login
     "/_next",
     "/favicon.ico",
     "/tradez-logo.png",
