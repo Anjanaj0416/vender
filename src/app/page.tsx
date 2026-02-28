@@ -35,9 +35,9 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: "success" | "error" | "warning" | "default"; Icon: any }
 > = {
-  PUBLISHED:   { label: "Published",   color: "success", Icon: CheckCircleOutlineIcon  },
-  UNPUBLISHED: { label: "Unpublished", color: "error",   Icon: PauseCircleOutlineIcon  },
-  APPROVED:    { label: "Approved",    color: "warning", Icon: HourglassTopIcon         },
+  PUBLISHED: { label: "Published", color: "success", Icon: CheckCircleOutlineIcon },
+  UNPUBLISHED: { label: "Unpublished", color: "error", Icon: PauseCircleOutlineIcon },
+  APPROVED: { label: "Approved", color: "warning", Icon: HourglassTopIcon },
 };
 
 function getStatusConfig(status: string) {
@@ -47,7 +47,7 @@ function getStatusConfig(status: string) {
 // ─── Top Navigation Bar ───────────────────────────────────────────────────────
 function TopNavBar() {
   const { data: session } = useSession();
-  const userName  = session?.user?.name  ?? "";
+  const userName = session?.user?.name ?? "";
   const userEmail = session?.user?.email ?? "";
   const userImage = session?.user?.image ?? undefined;
 
@@ -76,22 +76,17 @@ function TopNavBar() {
         }}
       >
         {/* Left — TRADEZ brand */}
-        <FlexBox alignItems="center" gap={1.25}>
-          <svg width="28" height="24" viewBox="0 0 120 100" fill="none">
-            <polygon points="60,10 100,55 75,55" fill="#f5a623" />
-            <polygon points="20,55 60,10 45,55" fill="#f5a623" />
-            <polygon points="20,55 75,55 60,85 45,70" fill="#f0c040" />
-            <path d="M52,22 Q60,14 68,22" stroke="#c0392b" strokeWidth="6" fill="none" strokeLinecap="round" />
-          </svg>
-          <Box>
-            <Box sx={{ fontWeight: 900, fontSize: 15, letterSpacing: 1.5, color: "#1a1a2e", lineHeight: 1 }}>
-              TRADE<Box component="span" sx={{ color: "primary.main" }}>Z</Box>
-            </Box>
-            <Small sx={{ fontSize: 8, letterSpacing: 2, color: "text.disabled", textTransform: "uppercase", display: "block" }}>
-              Vendor Portal
-            </Small>
-          </Box>
-        </FlexBox>
+        <img
+          src="/tradez-logo-horizontal.png"
+          alt="TradeZ Vendor Portal"
+          style={{
+            height: "180px",
+            width: "auto",
+            mixBlendMode: "multiply",
+            marginTop: "-70px",    // ← compensate for black padding top
+            marginBottom: "-70px", // ← compensate for black padding bottom
+          }}
+        />
 
         {/* Right — user info + sign out */}
         <FlexBox alignItems="center" gap={1.5}>
@@ -310,9 +305,9 @@ export default function StoreSelectionPage() {
     );
   }
 
-  const stores        = data?.stores       ?? [];
+  const stores = data?.stores ?? [];
   const totalProducts = data?.totalProducts ?? 0;
-  const totalStores   = data?.totalStores   ?? stores.length;
+  const totalStores = data?.totalStores ?? stores.length;
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>

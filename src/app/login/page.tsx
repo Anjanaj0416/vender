@@ -6,6 +6,7 @@ import { useEffect, useState, Suspense } from "react";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 
+
 // ─── Error message map ────────────────────────────────────────────────────────
 const ERROR_MESSAGES: Record<string, string> = {
   AccessDenied: "Your Google account is not authorised for TRADEZ Vendor Portal.",
@@ -15,16 +16,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 // ─── TRADEZ SVG Logo (from existing code) ────────────────────────────────────
-function TradezLogo() {
-  return (
-    <svg width="110" height="90" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="60,10 100,55 75,55" fill="#f5a623" />
-      <polygon points="20,55 60,10 45,55" fill="#f5a623" />
-      <polygon points="20,55 75,55 60,85 45,70" fill="#f0c040" />
-      <path d="M52,22 Q60,14 68,22" stroke="#c0392b" strokeWidth="4" fill="none" strokeLinecap="round" />
-    </svg>
-  );
-}
+
 
 // ─── Google Icon ──────────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -147,32 +139,12 @@ function LoginContent() {
 
           {/* Logo section */}
           <div style={{ textAlign: "center", marginBottom: "32px" }}>
-            <div style={{ display: "inline-flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-              <TradezLogo />
-              <div style={{ marginTop: "4px" }}>
-                <div style={{
-                  fontFamily: "'Georgia', serif",
-                  fontWeight: 900,
-                  letterSpacing: "3px",
-                  fontSize: "26px",
-                  color: "#1a1a2e",
-                  lineHeight: 1,
-                }}>
-                  TRADE<span style={{ color: "#c0392b" }}>Z</span>
-                </div>
-                <div style={{
-                  fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                  letterSpacing: "4px",
-                  color: "#888",
-                  fontSize: "8.5px",
-                  marginTop: "5px",
-                  textTransform: "uppercase",
-                  fontWeight: 500,
-                }}>
-                  THE FUTURE MARKETPLACE
-                </div>
-              </div>
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/tradez-logo.png"
+              alt="TradeZ Logo"
+              style={{ width: "250px", height: "auto", display: "block", margin: "0 auto", marginBottom: "-40px", marginTop: "-40px" }}
+            />
           </div>
 
           {/* Divider */}
@@ -230,9 +202,9 @@ function LoginContent() {
               gap: "10px",
             }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: "1px" }}>
-                <circle cx="12" cy="12" r="10" stroke="#c0392b" strokeWidth="2"/>
-                <line x1="12" y1="8" x2="12" y2="12" stroke="#c0392b" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="12" cy="16" r="1" fill="#c0392b"/>
+                <circle cx="12" cy="12" r="10" stroke="#c0392b" strokeWidth="2" />
+                <line x1="12" y1="8" x2="12" y2="12" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="12" cy="16" r="1" fill="#c0392b" />
               </svg>
               <span style={{
                 fontFamily: "'Helvetica Neue', Arial, sans-serif",
@@ -297,8 +269,8 @@ function LoginContent() {
             gap: "6px",
           }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.35C17.25 23.15 21 18.25 21 13V7L12 2z" stroke="#bbb" strokeWidth="2" fill="none"/>
-              <path d="M9 12l2 2 4-4" stroke="#bbb" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M12 2L3 7v6c0 5.25 3.75 10.15 9 11.35C17.25 23.15 21 18.25 21 13V7L12 2z" stroke="#bbb" strokeWidth="2" fill="none" />
+              <path d="M9 12l2 2 4-4" stroke="#bbb" strokeWidth="2" strokeLinecap="round" />
             </svg>
             <span style={{
               fontFamily: "'Helvetica Neue', Arial, sans-serif",

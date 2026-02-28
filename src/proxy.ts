@@ -12,6 +12,7 @@ export async function proxy(request: NextRequest) {
     "/_next",
     "/favicon.ico",
     "/tradez-logo.png",
+    "/tradez-logo-horizontal.png",
   ];
 
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
