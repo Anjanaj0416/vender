@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     console.log("[proxy:POST] save body:", JSON.stringify(body));
 
     const upstream = await fetch(
-      `${LIVE_API_BASE}/TradezProduct/GetProductMgtSaveAsync`,
+      `${LIVE_API_BASE}/TradezVendor/GetProductMgtSaveAsync`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

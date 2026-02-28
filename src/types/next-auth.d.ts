@@ -3,18 +3,25 @@ import "next-auth/jwt";
 
 declare module "next-auth" {
   interface User {
-    backendData?: any;
+    backendData?: {
+      vendorId:          string;
+      email:             string;
+      fullName:          string;
+      profilePictureUrl: string;
+      systemToken:       string;
+    };
   }
   interface Session {
-    backendData?: any;
-    googleId?: string;
+    vendorId:    string;
+    fullName:    string;
+    systemToken: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    backendData?: any;
-    googleId?: string;
-    idToken?: string;
+    vendorId:    string;
+    fullName:    string;
+    systemToken: string;
   }
 }

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const upstream = await fetch(
-      `${LIVE_API_BASE}/TradezProduct/GetVendorStoreDetailsInitAsync?vendorId=${vendorId}`,
+      `${LIVE_API_BASE}/TradezVendor/GetVendorStoreDetailsInitAsync?vendorId=${vendorId}`,
       {
         method: "GET",
         headers: { "Content-Type": "application/json" },

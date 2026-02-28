@@ -4,7 +4,7 @@
 // It will tell you EXACTLY what is failing — CORS, wrong storeId, bad response shape, etc.
 
 const STORE_ID = "f6c95b9c-cbdf-4441-a053-66d75bacdd1f";
-const LIVE_URL = `https://intranet_vertical.sltds.lk/api/TradezProduct/GetProductMgtInitAsync?storeId=${STORE_ID}`;
+const LIVE_URL = `https://intranet_vertical.sltds.lk/api/TradezVendor/GetProductMgtInitAsync?storeId=${STORE_ID}`;
 
 console.log("=".repeat(60));
 console.log("TRADEZ API DIAGNOSTIC");

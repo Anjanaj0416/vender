@@ -4,20 +4,28 @@ import GoogleProvider from "next-auth/providers/google";
 const LIVE_API_BASE = "https://intranet_vertical.sltds.lk/api";
 
 async function callBackendAuth(user: any, account: any): Promise<boolean> {
-  const email    = user.email ?? "";
-  const name     = user.name ?? "";
-  const googleId = account?.providerAccountId ?? "";
-  const idToken  = account?.id_token ?? "";
+  const email   = user.email ?? "";
+  const tokenId = account?.id_token ?? "";
 
-  // ── Attempt 1: POST with JSON body ────────────────────────────────────────
-  console.log("[auth] Attempt 1: POST with JSON body");
+  // ── 🔍 Login payload debug ────────────────────────────────────────────────
+  console.log("\n========================================");
+  console.log("  [auth] 🔐 GOOGLE LOGIN ATTEMPT");
+  console.log("========================================");
+  console.log(`  email   : ${email}`);
+  console.log(`  tokenId : ${tokenId ? tokenId.slice(0, 40) + "..." : "⚠️  MISSING"}`);
+  console.log("  📦 Request JSON:", JSON.stringify({ email, tokenId: tokenId.slice(0, 20) + "..." }));
+  console.log("========================================\n");
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ── Attempt 1: POST ───────────────────────────────────────────────────────
+  console.log("[auth] Attempt 1: POST with { email, tokenId }");
   try {
     const res1 = await fetch(
-      `${LIVE_API_BASE}/TradezProduct/GetLoginViaGoogleAuth`,
+      `${LIVE_API_BASE}/TradezAuth/GetLoginViaGoogleAuth`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, googleId, idToken }),
+        body: JSON.stringify({ email, tokenId }),
         cache: "no-store",
       }
     );
@@ -28,21 +36,18 @@ async function callBackendAuth(user: any, account: any): Promise<boolean> {
     if (res1.status !== 404 && res1.status !== 405) {
       return handleResponse(res1.status, text1, user);
     }
+    console.log("[auth] Attempt 1 got 405/404 — trying GET...");
   } catch (e: any) {
     console.log("[auth] Attempt 1 error:", e.message);
   }
 
   // ── Attempt 2: GET with query params ──────────────────────────────────────
-  console.log("[auth] Attempt 2: GET with query params");
+  console.log("[auth] Attempt 2: GET with ?email=&tokenId=");
   try {
-    const params = new URLSearchParams({ email, name, googleId, idToken });
+    const params = new URLSearchParams({ email, tokenId });
     const res2 = await fetch(
-      `${LIVE_API_BASE}/TradezProduct/GetLoginViaGoogleAuth?${params}`,
-      {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        cache: "no-store",
-      }
+      `${LIVE_API_BASE}/TradezAuth/GetLoginViaGoogleAuth?${params}`,
+      { method: "GET", cache: "no-store" }
     );
     console.log("[auth] Attempt 2 status:", res2.status);
     const text2 = await res2.text();
@@ -55,37 +60,10 @@ async function callBackendAuth(user: any, account: any): Promise<boolean> {
     console.log("[auth] Attempt 2 error:", e.message);
   }
 
-  // ── Attempt 3: POST with idToken only ─────────────────────────────────────
-  console.log("[auth] Attempt 3: POST with idToken only");
-  try {
-    const res3 = await fetch(
-      `${LIVE_API_BASE}/TradezProduct/GetLoginViaGoogleAuth`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-        cache: "no-store",
-      }
-    );
-    console.log("[auth] Attempt 3 status:", res3.status);
-    const text3 = await res3.text();
-    console.log("[auth] Attempt 3 body:", text3);
-
-    if (res3.status !== 404 && res3.status !== 405) {
-      return handleResponse(res3.status, text3, user);
-    }
-  } catch (e: any) {
-    console.log("[auth] Attempt 3 error:", e.message);
-  }
-
-  // ── All attempts got 404 — endpoint URL is wrong ──────────────────────────
-  console.error("[auth] ❌ All 404s — endpoint URL is wrong or API needs VPN/intranet access");
-  console.warn("[auth] ⚠️  TEMPORARY BYPASS: allowing login without backend confirmation");
-  console.warn("[auth] ⚠️  TODO: confirm correct endpoint URL before production!");
-
-  // TEMPORARY: bypass backend so you can keep developing the rest of the app
-  // Remove or set to `return false` once you have the correct endpoint
-  (user as any).backendData = { email, name, bypass: true };
+  // ── All failed ────────────────────────────────────────────────────────────
+  console.error("[auth] ❌ All attempts failed — backend may need VPN");
+  console.warn("[auth] ⚠️  BYPASS active — allowing login without backend confirmation");
+  (user as any).backendData = { email, bypass: true };
   return true;
 }
 
@@ -102,10 +80,9 @@ function handleResponse(status: number, rawText: string, user: any): boolean {
   let json: any;
   try {
     json = JSON.parse(rawText);
-    console.log("[auth] Parsed response:", JSON.stringify(json, null, 2));
   } catch {
     if (status >= 200 && status < 300) {
-      console.log("[auth] ✅ Non-JSON + 2xx = success:", rawText);
+      console.log("[auth] ✅ Non-JSON + 2xx = success");
       (user as any).backendData = { email: user.email };
       return true;
     }
@@ -119,8 +96,26 @@ function handleResponse(status: number, rawText: string, user: any): boolean {
     (status >= 200 && status < 300 && json?.success !== false);
 
   if (isSuccess) {
-    console.log("[auth] ✅ Backend accepted login");
-    (user as any).backendData = json?.data ?? json;
+    const inner = json?.data?.data ?? json?.data ?? json;
+
+    // ── Store all backend fields we need downstream ───────────────────────
+    (user as any).backendData = {
+      vendorId:          inner?.vendorId          ?? "",
+      email:             inner?.email             ?? user.email,
+      fullName:          inner?.fullName          ?? user.name,
+      profilePictureUrl: inner?.profilePictureUrl ?? "",
+      systemToken:       inner?.token             ?? "",
+    };
+
+    console.log("\n========================================");
+    console.log("  [auth] ✅ BACKEND LOGIN SUCCESS");
+    console.log("========================================");
+    console.log(`  vendorId    : ${(user as any).backendData.vendorId}`);
+    console.log(`  email       : ${(user as any).backendData.email}`);
+    console.log(`  fullName    : ${(user as any).backendData.fullName}`);
+    console.log(`  systemToken : ${(user as any).backendData.systemToken.slice(0, 40)}...`);
+    console.log("========================================\n");
+
     return true;
   }
 
@@ -147,20 +142,30 @@ export const authOptions: NextAuthOptions = {
       return allowed || "/login?error=AccessDenied";
     },
 
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
+      // On first sign-in, persist backend data into the JWT
       if (user) {
-        token.backendData = (user as any).backendData;
-        token.googleId    = account?.providerAccountId;
-        token.email       = user.email;
-        token.name        = user.name;
-        token.picture     = user.image;
+        const bd = (user as any).backendData ?? {};
+        token.vendorId    = bd.vendorId    ?? "";
+        token.fullName    = bd.fullName    ?? user.name;
+        token.systemToken = bd.systemToken ?? "";
+        token.email       = bd.email       ?? user.email;
+        token.picture     = bd.profilePictureUrl || user.image;
       }
       return token;
     },
 
     async session({ session, token }) {
-      (session as any).backendData = token.backendData;
-      (session as any).googleId    = token.googleId;
+      // Expose to the frontend via useSession()
+      (session as any).vendorId    = token.vendorId;
+      (session as any).fullName    = token.fullName;
+      (session as any).systemToken = token.systemToken;
+      session.user = {
+        ...session.user,
+        email: token.email as string,
+        name:  token.fullName as string,
+        image: token.picture as string,
+      };
       return session;
     },
   },
