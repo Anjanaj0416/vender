@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { SnackbarProvider } from "notistack";
 import { ReduxProvider } from "./redux/provider";
+import { SessionProvider } from "next-auth/react";
 
 const theme = createTheme({
   palette: {
@@ -25,13 +26,15 @@ const theme = createTheme({
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <ReduxProvider>
-        <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-          {children}
-        </SnackbarProvider>
-      </ReduxProvider>
-    </ThemeProvider>
+    <SessionProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <ReduxProvider>
+          <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+            {children}
+          </SnackbarProvider>
+        </ReduxProvider>
+      </ThemeProvider>
+    </SessionProvider>
   );
 }

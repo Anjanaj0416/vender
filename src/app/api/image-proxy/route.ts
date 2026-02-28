@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const INTRANET_BASE = "https://intranet_vertical.sltds.lk/";
+
 /**
- * Image proxy — fetches images from the intranet server and serves them
- * through your Next.js app, avoiding CORS/auth issues in the browser.
+ * Image proxy — redirects the browser directly to the intranet image URL.
  *
- * Usage: /api/image-proxy?url=https://intranet_vertical.sltds.lk/store/.../asset/....png
+ * The intranet server is only reachable from the LAN/VPN, so Node.js
+ * server-side fetches always return 404. Instead we issue a 302 redirect so
+ * the BROWSER (which IS on the LAN) fetches the image directly.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -14,30 +17,15 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing url param", { status: 400 });
   }
 
-  // Only allow images from the known intranet server
-  if (!imageUrl.startsWith("https://intranet_vertical.sltds.lk/")) {
+  if (!imageUrl.startsWith(INTRANET_BASE)) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
-  try {
-    const upstream = await fetch(imageUrl, { cache: "force-cache" });
-
-    if (!upstream.ok) {
-      return new NextResponse(`Upstream 404: ${imageUrl}`, { status: 404 });
-    }
-
-    const contentType = upstream.headers.get("content-type") ?? "image/png";
-    const buffer = await upstream.arrayBuffer();
-
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-      },
-    });
-  } catch (err: any) {
-    console.error("[image-proxy] ERROR:", err.message, "url:", imageUrl);
-    return new NextResponse("Proxy error", { status: 502 });
-  }
+  // Redirect browser directly to the intranet image
+  return NextResponse.redirect(imageUrl, {
+    status: 302,
+    headers: {
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }

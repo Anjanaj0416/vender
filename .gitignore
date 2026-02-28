@@ -2,3 +2,5 @@ node_modules
 .next
 .env
 out
+.env.local
+.env.development.local

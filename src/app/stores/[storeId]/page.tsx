@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
+import CircularProgress from "@mui/material/CircularProgress";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import { FlexBox } from "components/flex-box";
@@ -11,9 +14,32 @@ import { Small } from "components/Typography";
 import VendorProductManagementPageView from "pages-sections/vendor/products/page-view/vendor-product-management";
 
 export default function StoreProductsPage() {
-  const params = useParams();
-  const router = useRouter();
+  const params  = useParams();
+  const router  = useRouter();
+  const { status } = useSession();                          // ← auth guard
   const storeId = params.storeId as string;
+
+  // ── Redirect to login if not authenticated ─────────────────────────────────
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  // ── Show spinner while checking auth or redirecting ────────────────────────
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <Box sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "background.default",
+      }}>
+        <CircularProgress sx={{ color: "primary.main" }} />
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, md: 4 }, py: 4 }}>
@@ -46,7 +72,7 @@ export default function StoreProductsPage() {
         </FlexBox>
       </FlexBox>
 
-      {/* Existing product management view — completely unchanged */}
+      {/* Product management view — unchanged */}
       <VendorProductManagementPageView
         userId="vendor"
         storeId={storeId}
