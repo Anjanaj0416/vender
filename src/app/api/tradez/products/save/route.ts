@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     const data = await upstream.json();
     console.log("[proxy:POST] upstream status:", upstream.status);
+    console.log("[proxy:POST] upstream response:", JSON.stringify(data));
     return NextResponse.json(data, { status: upstream.status });
   } catch (err: any) {
     console.error("[proxy:POST] ERROR:", err.message);
