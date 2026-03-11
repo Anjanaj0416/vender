@@ -1,0 +1,33 @@
+{
+  "store-001": [
+    { "customerId": "CUST-1001", "customerName": "John Silva",        "orderId": "ORD-1001", "orderDate": "2026-01-05", "totalAmount": 12500, "status": "active" },
+    { "customerId": "CUST-1002", "customerName": "Priya Fernando",    "orderId": "ORD-1006", "orderDate": "2026-01-12", "totalAmount": 9600,  "status": "active" },
+    { "customerId": "CUST-1003", "customerName": "Nimal Perera",      "orderId": "ORD-1009", "orderDate": "2026-01-18", "totalAmount": 4500,  "status": "inactive" },
+    { "customerId": "CUST-1004", "customerName": "Amara De Silva",    "orderId": "ORD-1012", "orderDate": "2026-01-25", "totalAmount": 8750,  "status": "active" },
+    { "customerId": "CUST-1005", "customerName": "Kasun Jayawardena", "orderId": "ORD-1015", "orderDate": "2026-02-03", "totalAmount": 13800, "status": "active" },
+    { "customerId": "CUST-1006", "customerName": "Dilani Wickrama",   "orderId": "ORD-1018", "orderDate": "2026-02-10", "totalAmount": 4800,  "status": "inactive" },
+    { "customerId": "CUST-1007", "customerName": "Saman Kumara",      "orderId": "ORD-1021", "orderDate": "2026-02-15", "totalAmount": 7200,  "status": "active" },
+    { "customerId": "CUST-1008", "customerName": "Chamari Herath",    "orderId": "ORD-1024", "orderDate": "2026-02-20", "totalAmount": 5500,  "status": "active" },
+    { "customerId": "CUST-1009", "customerName": "Ruwan Bandara",     "orderId": "ORD-1027", "orderDate": "2026-03-01", "totalAmount": 3200,  "status": "inactive" },
+    { "customerId": "CUST-1010", "customerName": "Tharushi Mendis",   "orderId": "ORD-1030", "orderDate": "2026-03-05", "totalAmount": 6750,  "status": "active" }
+  ],
+  "store-002": [
+    { "customerId": "CUST-2001", "customerName": "Ravi Kumar",           "orderId": "ORD-2001", "orderDate": "2026-01-08", "totalAmount": 14200, "status": "active" },
+    { "customerId": "CUST-2002", "customerName": "Sasha Gunasekara",     "orderId": "ORD-2006", "orderDate": "2026-01-14", "totalAmount": 3400,  "status": "active" },
+    { "customerId": "CUST-2003", "customerName": "Thilak Bandara",       "orderId": "ORD-2010", "orderDate": "2026-01-22", "totalAmount": 4300,  "status": "inactive" },
+    { "customerId": "CUST-2004", "customerName": "Minoli Rathnayake",    "orderId": "ORD-2013", "orderDate": "2026-02-05", "totalAmount": 4450,  "status": "active" },
+    { "customerId": "CUST-2005", "customerName": "Chamara Liyanage",     "orderId": "ORD-2016", "orderDate": "2026-02-11", "totalAmount": 5600,  "status": "active" },
+    { "customerId": "CUST-2006", "customerName": "Anoma Senanayake",     "orderId": "ORD-2019", "orderDate": "2026-02-18", "totalAmount": 8900,  "status": "inactive" },
+    { "customerId": "CUST-2007", "customerName": "Nuwan Dissanayake",    "orderId": "ORD-2022", "orderDate": "2026-03-02", "totalAmount": 11000, "status": "active" },
+    { "customerId": "CUST-2008", "customerName": "Sanduni Wijesekara",   "orderId": "ORD-2025", "orderDate": "2026-03-06", "totalAmount": 6300,  "status": "active" }
+  ],
+  "store-003": [
+    { "customerId": "CUST-3001", "customerName": "Iresha Samarasinghe",  "orderId": "ORD-3001", "orderDate": "2026-01-10", "totalAmount": 2900,  "status": "active" },
+    { "customerId": "CUST-3002", "customerName": "Lasith Mendis",        "orderId": "ORD-3007", "orderDate": "2026-01-19", "totalAmount": 2250,  "status": "active" },
+    { "customerId": "CUST-3003", "customerName": "Nadeesha Wijesuriya",  "orderId": "ORD-3011", "orderDate": "2026-02-01", "totalAmount": 9000,  "status": "inactive" },
+    { "customerId": "CUST-3004", "customerName": "Ruwan Senanayake",     "orderId": "ORD-3014", "orderDate": "2026-02-08", "totalAmount": 2600,  "status": "active" },
+    { "customerId": "CUST-3005", "customerName": "Malika Jayasinghe",    "orderId": "ORD-3017", "orderDate": "2026-02-14", "totalAmount": 7800,  "status": "active" },
+    { "customerId": "CUST-3006", "customerName": "Prasad Gunawardena",   "orderId": "ORD-3020", "orderDate": "2026-02-22", "totalAmount": 5100,  "status": "inactive" },
+    { "customerId": "CUST-3007", "customerName": "Hiruni Wickremasinghe","orderId": "ORD-3023", "orderDate": "2026-03-04", "totalAmount": 3750,  "status": "active" }
+  ]
+}

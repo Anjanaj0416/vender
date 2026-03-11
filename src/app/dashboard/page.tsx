@@ -38,6 +38,7 @@ import SalesReportModal         from "components/SalesReportModal";
 import OrderReportModal         from "components/OrderReportModal";
 import InventoryReportModal     from "components/InventoryReportModal";
 import PendingOrdersReportModal from "components/PendingOrdersReportModal";
+import CustomersReportModal     from "components/CustomersReportModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,6 +223,7 @@ export default function DashboardPage() {
   const [inventoryModalOpen,     setInventoryModalOpen]     = useState(false);
   const [inventoryFilter,        setInventoryFilter]        = useState<"All" | "Y">("All");
   const [pendingOrdersModalOpen, setPendingOrdersModalOpen] = useState(false);
+  const [customersModalOpen,     setCustomersModalOpen]     = useState(false);
 
   const vendorId = (session as any)?.vendorId ?? "";
 
@@ -315,6 +317,11 @@ export default function DashboardPage() {
         onClose={() => setPendingOrdersModalOpen(false)}
         stores={stores}
       />
+      <CustomersReportModal
+        open={customersModalOpen}
+        onClose={() => setCustomersModalOpen(false)}
+        stores={stores}
+      />
 
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
 
@@ -395,6 +402,8 @@ export default function DashboardPage() {
                         ? () => openInventory("Y")
                         : config.key === "pendingOrders"
                         ? () => setPendingOrdersModalOpen(true)
+                        : config.key === "totalCustomers"
+                        ? () => setCustomersModalOpen(true)
                         : undefined
                     }
                   />
