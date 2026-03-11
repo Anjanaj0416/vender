@@ -206,6 +206,7 @@ export default function DashboardPage() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [stores,        setStores]        = useState<{ storeUuid: string; storeName: string }[]>([]);
 
   // ── Modal state ───────────────────────────────────────────────────────────
   const [salesModalOpen,     setSalesModalOpen]     = useState(false);
@@ -220,6 +221,20 @@ export default function DashboardPage() {
   useEffect(() => {
     if (authStatus === "unauthenticated") router.replace("/login");
   }, [authStatus, router]);
+
+  // ── Fetch stores list ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!vendorId) return;
+    fetch(`/api/tradez/stores?vendorId=${vendorId}`)
+      .then(r => r.json())
+      .then(data => {
+        const list = data.stores ?? [];
+        if (list.length > 0) {
+          setStores(list.map((s: any) => ({ storeUuid: s.storeName, storeName: s.storeName })));
+        }
+      })
+      .catch(() => {});
+  }, [vendorId]);
 
   // ── Fetch dashboard stats ─────────────────────────────────────────────────
   const fetchDashboard = async () => {
@@ -277,12 +292,13 @@ export default function DashboardPage() {
       <TopNavBar />
 
       {/* ── Modals ── */}
-      <SalesReportModal  open={salesModalOpen}  onClose={() => setSalesModalOpen(false)} />
-      <OrderReportModal  open={orderModalOpen}  onClose={() => setOrderModalOpen(false)} />
+      <SalesReportModal  open={salesModalOpen}  onClose={() => setSalesModalOpen(false)} stores={stores} />
+      <OrderReportModal  open={orderModalOpen}  onClose={() => setOrderModalOpen(false)} stores={stores} />
       <InventoryReportModal
         open={inventoryModalOpen}
         onClose={() => setInventoryModalOpen(false)}
         defaultFilter={inventoryFilter}
+        stores={stores}
       />
 
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>

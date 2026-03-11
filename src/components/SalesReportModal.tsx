@@ -15,6 +15,9 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+
 import { H3, H6, Paragraph, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
 
@@ -38,9 +41,16 @@ const SALES_DATA: SalesRecord[] = [
   { date: "07/03/2025", iso: "2025-03-07", totalSales: 4800, orders: 115, unitsSold: 148 },
 ];
 
+// ─── Store option type ────────────────────────────────────────────────────────
+
+export interface StoreOption {
+  storeUuid: string;
+  storeName: string;
+}
+
 // ─── PDF helper ───────────────────────────────────────────────────────────────
 
-function printSalesPdf(rows: SalesRecord[]) {
+function printSalesPdf(rows: SalesRecord[], storeName: string) {
   if (rows.length === 0) return;
   const totalRevenue = rows.reduce((s, r) => s + r.totalSales, 0);
   const totalOrders  = rows.reduce((s, r) => s + r.orders, 0);
@@ -49,12 +59,13 @@ function printSalesPdf(rows: SalesRecord[]) {
   const now          = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>Sales Performance Full Report</title>
+<title>Sales Performance Full Report – ${storeName}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;padding:32px}
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
   .title{font-size:24px;font-weight:800}.sub{font-size:12px;color:#666;margin-top:5px}
+  .store-tag{font-size:12px;color:#7c3aed;font-weight:700;margin-top:4px}
   .badge{background:#fff0f0;color:#c0392b;border:1.5px solid #c0392b;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
   .kpi{border:1.5px solid #e8e8e8;border-radius:10px;padding:16px}
@@ -75,6 +86,7 @@ function printSalesPdf(rows: SalesRecord[]) {
 <div class="hdr">
   <div>
     <div class="title">Sales Performance Full Report</div>
+    <div class="store-tag">Store: ${storeName}</div>
     <div class="sub">Period: ${rows[0].date} – ${rows[rows.length - 1].date}</div>
     <div class="sub">Generated: Today at ${now}</div>
   </div>
@@ -125,11 +137,13 @@ function printSalesPdf(rows: SalesRecord[]) {
 interface SalesReportModalProps {
   open: boolean;
   onClose: () => void;
+  stores?: StoreOption[];
 }
 
-export default function SalesReportModal({ open, onClose }: SalesReportModalProps) {
-  const [fromDate, setFromDate] = useState("");
-  const [toDate,   setToDate]   = useState("");
+export default function SalesReportModal({ open, onClose, stores = [] }: SalesReportModalProps) {
+  const [fromDate,       setFromDate]       = useState("");
+  const [toDate,         setToDate]         = useState("");
+  const [selectedStore,  setSelectedStore]  = useState("All");
 
   const filtered = useMemo(() => SALES_DATA.filter(r => {
     if (fromDate && r.iso < fromDate) return false;
@@ -144,6 +158,9 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
     ? filtered.reduce((b, r) => r.totalSales > b.totalSales ? r : b, filtered[0])
     : null;
   const now = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const selectedStoreName = selectedStore === "All"
+    ? "All Stores"
+    : stores.find(s => s.storeUuid === selectedStore)?.storeName ?? "All Stores";
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -164,7 +181,10 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
           <FlexBetween alignItems="flex-start">
             <Box>
               <H3 fontWeight={900} sx={{ fontSize: 22 }}>Sales Performance Full Report</H3>
-              <Small color="text.disabled" sx={{ display: "block", mt: 0.5, fontSize: 12 }}>
+              <Small sx={{ display: "block", mt: 0.5, fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>
+                Store: {selectedStoreName}
+              </Small>
+              <Small color="text.disabled" sx={{ display: "block", fontSize: 12 }}>
                 Period: {filtered[0]?.date ?? "—"} – {filtered[filtered.length - 1]?.date ?? "—"}
               </Small>
               <Small color="text.disabled" sx={{ display: "block", fontSize: 12 }}>
@@ -188,9 +208,23 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
         {/* ── Body ── */}
         <Box sx={{ overflowY: "auto", flex: 1, px: 4, py: 3 }}>
 
-          {/* Date filter */}
+          {/* Filters */}
           <Card sx={{ p: 2.5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none", mb: 3 }}>
             <Grid container spacing={2} alignItems="flex-end">
+              <Grid item xs={12} sm={4}>
+                <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>Store</Small>
+                <Select
+                  size="small" fullWidth value={selectedStore}
+                  onChange={e => setSelectedStore(e.target.value)}
+                  sx={{ borderRadius: 2, fontSize: 13 }}
+                  displayEmpty
+                >
+                  <MenuItem value="All" sx={{ fontSize: 13 }}>All Stores</MenuItem>
+                  {stores.map(s => (
+                    <MenuItem key={s.storeUuid} value={s.storeUuid} sx={{ fontSize: 13 }}>{s.storeName}</MenuItem>
+                  ))}
+                </Select>
+              </Grid>
               <Grid item xs={12} sm={4}>
                 <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>From Date</Small>
                 <TextField
@@ -209,8 +243,8 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: 13 } }}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
-                <FlexBox gap={1} mt={{ xs: 0, sm: 2.75 }}>
+              <Grid item xs={12}>
+                <FlexBox gap={1}>
                   <Button
                     variant="contained"
                     startIcon={<FilterAltIcon />}
@@ -221,7 +255,7 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
                   <Button
                     variant="outlined"
                     startIcon={<RestartAltIcon />}
-                    onClick={() => { setFromDate(""); setToDate(""); }}
+                    onClick={() => { setFromDate(""); setToDate(""); setSelectedStore("All"); }}
                     sx={{ borderColor: "divider", color: "text.secondary", borderRadius: 2, fontWeight: 700, fontSize: 13, textTransform: "none", px: 2, "&:hover": { borderColor: "#c0392b", color: "#c0392b" } }}
                   >
                     Reset
@@ -310,7 +344,7 @@ export default function SalesReportModal({ open, onClose }: SalesReportModalProp
           <Button
             variant="contained"
             startIcon={<PictureAsPdfIcon />}
-            onClick={() => printSalesPdf(filtered)}
+            onClick={() => printSalesPdf(filtered, selectedStoreName)}
             sx={{ bgcolor: "#c0392b", "&:hover": { bgcolor: "#96281b" }, borderRadius: 2, fontWeight: 800, fontSize: 13, textTransform: "none", px: 2.5, boxShadow: "0 4px 14px rgba(192,57,43,0.30)" }}
           >
             Download as PDF

@@ -21,6 +21,13 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { H3, H6, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
 
+// ─── Store option type ────────────────────────────────────────────────────────
+
+export interface StoreOption {
+  storeUuid: string;
+  storeName: string;
+}
+
 // ─── Types & data ─────────────────────────────────────────────────────────────
 
 export interface OrderRecord {
@@ -75,7 +82,7 @@ function downloadCsv(rows: OrderRecord[]) {
 
 // ─── PDF helper ───────────────────────────────────────────────────────────────
 
-function printOrderPdf(rows: OrderRecord[]) {
+function printOrderPdf(rows: OrderRecord[], storeName: string) {
   const total     = rows.length;
   const delivered = rows.filter(r => r.orderStatus === "Delivered").length;
   const pending   = rows.filter(r => r.orderStatus === "Pending").length;
@@ -84,12 +91,13 @@ function printOrderPdf(rows: OrderRecord[]) {
   const sc = (s: string) => s === "Delivered" ? "#16a34a" : s === "Pending" ? "#d97706" : "#dc2626";
   const pc = (s: string) => s === "Paid" ? "#16a34a" : "#dc2626";
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Order Report</title>
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Order Report – ${storeName}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a1a;padding:36px}
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
   .title{font-size:24px;font-weight:800}.sub{font-size:12px;color:#666;margin-top:5px}
+  .store-tag{font-size:12px;color:#7c3aed;font-weight:700;margin-top:4px}
   .badge{background:#f0f4ff;color:#2563eb;border:1.5px solid #2563eb;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700}
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
   .kpi{border:1.5px solid #e8e8e8;border-radius:10px;padding:16px}
@@ -109,6 +117,7 @@ function printOrderPdf(rows: OrderRecord[]) {
 <div class="hdr">
   <div>
     <div class="title">Order Report</div>
+    <div class="store-tag">Store: ${storeName}</div>
     <div class="sub">Filtered order data by date, order ID, and status</div>
     <div class="sub">Generated: ${now}</div>
   </div>
@@ -154,14 +163,16 @@ function printOrderPdf(rows: OrderRecord[]) {
 interface OrderReportModalProps {
   open: boolean;
   onClose: () => void;
+  stores?: StoreOption[];
 }
 
-export default function OrderReportModal({ open, onClose }: OrderReportModalProps) {
+export default function OrderReportModal({ open, onClose, stores = [] }: OrderReportModalProps) {
   const [fromDate,      setFromDate]      = useState("");
   const [toDate,        setToDate]        = useState("");
   const [orderIdFilter, setOrderIdFilter] = useState("");
   const [orderStatus,   setOrderStatus]   = useState("All");
   const [paymentStatus, setPaymentStatus] = useState("All");
+  const [selectedStore, setSelectedStore] = useState("All");
   const [page,          setPage]          = useState(1);
 
   const filtered = useMemo(() => ORDER_DATA.filter(r => {
@@ -179,10 +190,13 @@ export default function OrderReportModal({ open, onClose }: OrderReportModalProp
   const pending    = filtered.filter(r => r.orderStatus === "Pending").length;
   const cancelled  = filtered.filter(r => r.orderStatus === "Cancelled").length;
   const now        = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+  const selectedStoreName = selectedStore === "All"
+    ? "All Stores"
+    : stores.find(s => s.storeUuid === selectedStore)?.storeName ?? "All Stores";
 
   const handleReset = () => {
     setFromDate(""); setToDate(""); setOrderIdFilter("");
-    setOrderStatus("All"); setPaymentStatus("All"); setPage(1);
+    setOrderStatus("All"); setPaymentStatus("All"); setSelectedStore("All"); setPage(1);
   };
 
   return (
@@ -204,7 +218,10 @@ export default function OrderReportModal({ open, onClose }: OrderReportModalProp
           <FlexBetween alignItems="flex-start">
             <Box>
               <H3 fontWeight={900} sx={{ fontSize: 22 }}>Order Report</H3>
-              <Small color="text.disabled" sx={{ display: "block", mt: 0.5, fontSize: 12 }}>
+              <Small sx={{ display: "block", mt: 0.5, fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>
+                Store: {selectedStoreName}
+              </Small>
+              <Small color="text.disabled" sx={{ display: "block", fontSize: 12 }}>
                 Filter order data by date, order ID, and status
               </Small>
               <Small color="text.disabled" sx={{ display: "block", fontSize: 12 }}>
@@ -231,6 +248,15 @@ export default function OrderReportModal({ open, onClose }: OrderReportModalProp
           {/* Filter card — same card style as Sales date filter */}
           <Card sx={{ p: 2.5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none", mb: 3 }}>
             <Grid container spacing={2} alignItems="flex-end">
+              <Grid item xs={12} sm={4} md={2.5}>
+                <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>Store</Small>
+                <Select size="small" fullWidth value={selectedStore} onChange={e => { setSelectedStore(e.target.value); setPage(1); }} sx={{ borderRadius: 2, fontSize: 13 }} displayEmpty>
+                  <MenuItem value="All" sx={{ fontSize: 13 }}>All Stores</MenuItem>
+                  {stores.map(s => (
+                    <MenuItem key={s.storeUuid} value={s.storeUuid} sx={{ fontSize: 13 }}>{s.storeName}</MenuItem>
+                  ))}
+                </Select>
+              </Grid>
               <Grid item xs={6} sm={4} md={2}>
                 <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>From Date</Small>
                 <TextField type="date" size="small" fullWidth value={fromDate} onChange={e => setFromDate(e.target.value)}
@@ -303,7 +329,7 @@ export default function OrderReportModal({ open, onClose }: OrderReportModalProp
                   sx={{ borderColor: "divider", color: "text.secondary", borderRadius: 2, fontWeight: 700, fontSize: 12, textTransform: "none", "&:hover": { borderColor: "#16a34a", color: "#16a34a" } }}>
                   CSV
                 </Button>
-                <Button variant="contained" size="small" startIcon={<PictureAsPdfIcon />} onClick={() => printOrderPdf(filtered)}
+                <Button variant="contained" size="small" startIcon={<PictureAsPdfIcon />} onClick={() => printOrderPdf(filtered, selectedStoreName)}
                   sx={{ bgcolor: "#c0392b", "&:hover": { bgcolor: "#96281b" }, borderRadius: 2, fontWeight: 700, fontSize: 12, textTransform: "none" }}>
                   Export as PDF
                 </Button>
@@ -383,7 +409,7 @@ export default function OrderReportModal({ open, onClose }: OrderReportModalProp
             sx={{ borderColor: "divider", color: "text.secondary", borderRadius: 2, fontWeight: 700, fontSize: 13, textTransform: "none", px: 2.5, "&:hover": { borderColor: "#16a34a", color: "#16a34a" } }}>
             Download CSV
           </Button>
-          <Button variant="contained" startIcon={<PictureAsPdfIcon />} onClick={() => printOrderPdf(filtered)}
+          <Button variant="contained" startIcon={<PictureAsPdfIcon />} onClick={() => printOrderPdf(filtered, selectedStoreName)}
             sx={{ bgcolor: "#c0392b", "&:hover": { bgcolor: "#96281b" }, borderRadius: 2, fontWeight: 800, fontSize: 13, textTransform: "none", px: 2.5, boxShadow: "0 4px 14px rgba(192,57,43,0.30)" }}>
             Download PDF
           </Button>

@@ -21,6 +21,13 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { H3, H6, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
 
+// ─── Store option type ────────────────────────────────────────────────────────
+
+export interface StoreOption {
+  storeUuid: string;
+  storeName: string;
+}
+
 // ─── Types & data ─────────────────────────────────────────────────────────────
 
 interface InventoryRecord {
@@ -52,7 +59,7 @@ const ROWS_PER_PAGE = 6;
 
 // ─── PDF helper ───────────────────────────────────────────────────────────────
 
-function printInventoryPdf(rows: InventoryRecord[], title: string): void {
+function printInventoryPdf(rows: InventoryRecord[], title: string, storeName: string): void {
   const total    = rows.length;
   const lowCount = rows.filter((r) => r.isLowStock).length;
   const okCount  = total - lowCount;
@@ -65,6 +72,7 @@ function printInventoryPdf(rows: InventoryRecord[], title: string): void {
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
   .title{font-size:24px;font-weight:800}.sub{font-size:12px;color:#666;margin-top:5px}
   .badge{background:#fff7e6;color:#d97706;border:1.5px solid #d97706;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700}
+  .store-tag{font-size:12px;color:#7c3aed;font-weight:700;margin-top:4px}
   .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:26px}
   .kpi{border:1.5px solid #e8e8e8;border-radius:10px;padding:16px}
   .kpi-lbl{font-size:11px;color:#888;margin-bottom:6px}
@@ -87,6 +95,7 @@ function printInventoryPdf(rows: InventoryRecord[], title: string): void {
 <div class="hdr">
   <div>
     <div class="title">${title}</div>
+    <div class="store-tag">Store: ${storeName}</div>
     <div class="sub">Current stock levels and restock requirements (ROL: ${ROL_THRESHOLD} units)</div>
     <div class="sub">Generated: ${now}</div>
   </div>
@@ -144,6 +153,7 @@ export interface InventoryReportModalProps {
    * "Y"   → opened from "Low Stock Items" card → pre-filtered to low stock only
    */
   defaultFilter?: "All" | "Y" | "N";
+  stores?: StoreOption[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -152,9 +162,11 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
   open,
   onClose,
   defaultFilter = "All",
+  stores = [],
 }) => {
   const [productIdFilter, setProductIdFilter] = useState<string>("");
   const [lowStockFilter,  setLowStockFilter]  = useState<"All" | "Y" | "N">(defaultFilter);
+  const [selectedStore,   setSelectedStore]   = useState<string>("All");
   const [page,            setPage]            = useState<number>(1);
 
   // Re-sync local filter whenever defaultFilter prop changes
@@ -162,6 +174,7 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
     if (open) {
       setLowStockFilter(defaultFilter);
       setProductIdFilter("");
+      setSelectedStore("All");
       setPage(1);
     }
   }, [open, defaultFilter]);
@@ -188,16 +201,20 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
   const okCount    = filtered.length - lowCount;
   const now        = new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
 
-  const isLowStockView = defaultFilter === "Y";
-  const modalTitle     = isLowStockView ? "Low Stock Report" : "Inventory Report";
-  const chipLabel      = isLowStockView ? `${lowCount} Low Stock` : `${filtered.length} Products`;
-  const chipSx         = isLowStockView
+  const isLowStockView    = defaultFilter === "Y";
+  const modalTitle        = isLowStockView ? "Low Stock Report" : "Inventory Report";
+  const chipLabel         = isLowStockView ? `${lowCount} Low Stock` : `${filtered.length} Products`;
+  const chipSx            = isLowStockView
     ? { bgcolor: "rgba(220,38,38,0.08)", color: "#dc2626", border: "1.5px solid #dc2626" }
     : { bgcolor: "rgba(37,99,235,0.08)", color: "#2563eb", border: "1.5px solid #2563eb" };
+  const selectedStoreName = selectedStore === "All"
+    ? "All Stores"
+    : stores.find(s => s.storeUuid === selectedStore)?.storeName ?? "All Stores";
 
   const handleReset = () => {
     setProductIdFilter("");
     setLowStockFilter(defaultFilter);
+    setSelectedStore("All");
     setPage(1);
   };
 
@@ -221,7 +238,10 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
           <FlexBetween alignItems="flex-start">
             <Box>
               <H3 fontWeight={900} sx={{ fontSize: 22 }}>{modalTitle}</H3>
-              <Small color="text.disabled" sx={{ display: "block", mt: 0.5, fontSize: 12 }}>
+              <Small sx={{ display: "block", mt: 0.5, fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>
+                Store: {selectedStoreName}
+              </Small>
+              <Small color="text.disabled" sx={{ display: "block", fontSize: 12 }}>
                 {isLowStockView
                   ? `Products below the reorder level (ROL: ${ROL_THRESHOLD} units)`
                   : `Current stock levels and restock requirements (ROL: ${ROL_THRESHOLD} units)`}
@@ -254,7 +274,23 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
           {/* Filter card */}
           <Card sx={{ p: 2.5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none", mb: 3 }}>
             <Grid container spacing={2} alignItems="flex-end">
-              <Grid item xs={12} sm={5}>
+              <Grid item xs={12} sm={4}>
+                <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>
+                  Store
+                </Small>
+                <Select
+                  size="small" fullWidth value={selectedStore}
+                  onChange={(e) => { setSelectedStore(e.target.value); setPage(1); }}
+                  sx={{ borderRadius: 2, fontSize: 13 }}
+                  displayEmpty
+                >
+                  <MenuItem value="All" sx={{ fontSize: 13 }}>All Stores</MenuItem>
+                  {stores.map(s => (
+                    <MenuItem key={s.storeUuid} value={s.storeUuid} sx={{ fontSize: 13 }}>{s.storeName}</MenuItem>
+                  ))}
+                </Select>
+              </Grid>
+              <Grid item xs={12} sm={4}>
                 <Small fontWeight={700} color="text.secondary" sx={{ display: "block", mb: 0.75, fontSize: 12 }}>
                   Product ID
                 </Small>
@@ -335,7 +371,7 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
               <Button
                 variant="contained" size="small"
                 startIcon={<PictureAsPdfIcon />}
-                onClick={() => printInventoryPdf(filtered, modalTitle)}
+                onClick={() => printInventoryPdf(filtered, modalTitle, selectedStoreName)}
                 sx={{ bgcolor: "#c0392b", "&:hover": { bgcolor: "#96281b" }, borderRadius: 2, fontWeight: 700, fontSize: 12, textTransform: "none" }}
               >
                 Export as PDF
@@ -464,7 +500,7 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
           <Button
             variant="contained"
             startIcon={<PictureAsPdfIcon />}
-            onClick={() => printInventoryPdf(filtered, modalTitle)}
+            onClick={() => printInventoryPdf(filtered, modalTitle, selectedStoreName)}
             sx={{ bgcolor: "#c0392b", "&:hover": { bgcolor: "#96281b" }, borderRadius: 2, fontWeight: 800, fontSize: 13, textTransform: "none", px: 2.5, boxShadow: "0 4px 14px rgba(192,57,43,0.30)" }}
           >
             Download PDF
