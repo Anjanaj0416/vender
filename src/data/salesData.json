@@ -1,0 +1,29 @@
+{
+  "store-001": [
+    { "date": "01/03/2025", "iso": "2025-03-01", "totalSales": 5000, "orders": 120, "unitsSold": 150 },
+    { "date": "02/03/2025", "iso": "2025-03-02", "totalSales": 4200, "orders": 100, "unitsSold": 130 },
+    { "date": "03/03/2025", "iso": "2025-03-03", "totalSales": 6800, "orders": 165, "unitsSold": 210 },
+    { "date": "04/03/2025", "iso": "2025-03-04", "totalSales": 3900, "orders": 88,  "unitsSold": 105 },
+    { "date": "05/03/2025", "iso": "2025-03-05", "totalSales": 7200, "orders": 182, "unitsSold": 240 },
+    { "date": "06/03/2025", "iso": "2025-03-06", "totalSales": 5500, "orders": 134, "unitsSold": 175 },
+    { "date": "07/03/2025", "iso": "2025-03-07", "totalSales": 4800, "orders": 115, "unitsSold": 148 }
+  ],
+  "store-002": [
+    { "date": "01/03/2025", "iso": "2025-03-01", "totalSales": 3100, "orders": 74,  "unitsSold": 90  },
+    { "date": "02/03/2025", "iso": "2025-03-02", "totalSales": 2800, "orders": 65,  "unitsSold": 82  },
+    { "date": "03/03/2025", "iso": "2025-03-03", "totalSales": 4500, "orders": 110, "unitsSold": 140 },
+    { "date": "04/03/2025", "iso": "2025-03-04", "totalSales": 2600, "orders": 58,  "unitsSold": 70  },
+    { "date": "05/03/2025", "iso": "2025-03-05", "totalSales": 5200, "orders": 125, "unitsSold": 160 },
+    { "date": "06/03/2025", "iso": "2025-03-06", "totalSales": 3800, "orders": 92,  "unitsSold": 115 },
+    { "date": "07/03/2025", "iso": "2025-03-07", "totalSales": 3300, "orders": 80,  "unitsSold": 98  }
+  ],
+  "store-003": [
+    { "date": "01/03/2025", "iso": "2025-03-01", "totalSales": 2400, "orders": 55,  "unitsSold": 68  },
+    { "date": "02/03/2025", "iso": "2025-03-02", "totalSales": 1900, "orders": 42,  "unitsSold": 50  },
+    { "date": "03/03/2025", "iso": "2025-03-03", "totalSales": 3200, "orders": 78,  "unitsSold": 95  },
+    { "date": "04/03/2025", "iso": "2025-03-04", "totalSales": 1600, "orders": 38,  "unitsSold": 44  },
+    { "date": "05/03/2025", "iso": "2025-03-05", "totalSales": 4100, "orders": 96,  "unitsSold": 118 },
+    { "date": "06/03/2025", "iso": "2025-03-06", "totalSales": 2900, "orders": 68,  "unitsSold": 82  },
+    { "date": "07/03/2025", "iso": "2025-03-07", "totalSales": 2500, "orders": 60,  "unitsSold": 74  }
+  ]
+}

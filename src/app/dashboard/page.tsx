@@ -198,6 +198,12 @@ function KpiSkeleton() {
 
 // ─── Main Dashboard Page ──────────────────────────────────────────────────────
 
+const SAMPLE_STORES = [
+  { storeUuid: "store-001", storeName: "Downtown Store" },
+  { storeUuid: "store-002", storeName: "Mall Branch" },
+  { storeUuid: "store-003", storeName: "Westside Outlet" },
+];
+
 export default function DashboardPage() {
   const router = useRouter();
   const { data: session, status: authStatus } = useSession();
@@ -206,7 +212,7 @@ export default function DashboardPage() {
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
-  const [stores,        setStores]        = useState<{ storeUuid: string; storeName: string }[]>([]);
+  const [stores,        setStores]        = useState<{ storeUuid: string; storeName: string }[]>(SAMPLE_STORES);
 
   // ── Modal state ───────────────────────────────────────────────────────────
   const [salesModalOpen,     setSalesModalOpen]     = useState(false);
@@ -230,10 +236,12 @@ export default function DashboardPage() {
       .then(data => {
         const list = data.stores ?? [];
         if (list.length > 0) {
-          setStores(list.map((s: any) => ({ storeUuid: s.storeName, storeName: s.storeName })));
+          setStores(list.map((s: any) => ({ storeUuid: s.storeUuid ?? s.storeName, storeName: s.storeName })));
+        } else {
+          setStores(SAMPLE_STORES);
         }
       })
-      .catch(() => {});
+      .catch(() => { setStores(SAMPLE_STORES); });
   }, [vendorId]);
 
   // ── Fetch dashboard stats ─────────────────────────────────────────────────

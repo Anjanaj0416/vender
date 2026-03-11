@@ -1,0 +1,20 @@
+{
+  "store-001": [
+    { "productId": "PRD-001", "productName": "Wireless Headphones", "currentStock": 20, "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-002", "productName": "USB-C Hub",           "currentStock": 45, "restockQty": 0,  "isLowStock": false },
+    { "productId": "PRD-003", "productName": "Laptop Stand",        "currentStock": 8,  "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-004", "productName": "Mechanical Keyboard", "currentStock": 60, "restockQty": 0,  "isLowStock": false }
+  ],
+  "store-002": [
+    { "productId": "PRD-005", "productName": "Webcam HD 1080p",     "currentStock": 12, "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-006", "productName": "Bluetooth Speaker",   "currentStock": 33, "restockQty": 0,  "isLowStock": false },
+    { "productId": "PRD-007", "productName": "Monitor 27\"",        "currentStock": 5,  "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-008", "productName": "Smart Watch",         "currentStock": 72, "restockQty": 0,  "isLowStock": false }
+  ],
+  "store-003": [
+    { "productId": "PRD-009", "productName": "Phone Case Pack",     "currentStock": 18, "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-010", "productName": "Power Bank 20000mAh", "currentStock": 40, "restockQty": 0,  "isLowStock": false },
+    { "productId": "PRD-011", "productName": "HDMI Cable 2m",       "currentStock": 3,  "restockQty": 25, "isLowStock": true  },
+    { "productId": "PRD-012", "productName": "Desk Lamp LED",       "currentStock": 55, "restockQty": 0,  "isLowStock": false }
+  ]
+}

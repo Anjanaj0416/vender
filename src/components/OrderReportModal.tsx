@@ -20,6 +20,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 import { H3, H6, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
+import ORDER_DATA_BY_STORE from "data/orderData.json";
 
 // ─── Store option type ────────────────────────────────────────────────────────
 
@@ -40,20 +41,7 @@ export interface OrderRecord {
   totalAmount: number;
 }
 
-const ORDER_DATA: OrderRecord[] = [
-  { orderId: "ORD-1001", orderDate: "2026-03-01", deliveryDate: "2026-03-03", productQuantity: 4,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 12500 },
-  { orderId: "ORD-1002", orderDate: "2026-03-01", deliveryDate: "2026-03-04", productQuantity: 2,  orderStatus: "Pending",    paymentStatus: "Unpaid", totalAmount: 7800  },
-  { orderId: "ORD-1003", orderDate: "2026-03-02", deliveryDate: "2026-03-05", productQuantity: 7,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 21400 },
-  { orderId: "ORD-1004", orderDate: "2026-03-03", deliveryDate: "2026-03-06", productQuantity: 1,  orderStatus: "Cancelled",  paymentStatus: "Unpaid", totalAmount: 3200  },
-  { orderId: "ORD-1005", orderDate: "2026-03-04", deliveryDate: "2026-03-07", productQuantity: 5,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 16900 },
-  { orderId: "ORD-1006", orderDate: "2026-03-05", deliveryDate: "2026-03-08", productQuantity: 3,  orderStatus: "Pending",    paymentStatus: "Paid",   totalAmount: 9600  },
-  { orderId: "ORD-1007", orderDate: "2026-03-06", deliveryDate: "2026-03-09", productQuantity: 6,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 18700 },
-  { orderId: "ORD-1008", orderDate: "2026-03-07", deliveryDate: "2026-03-10", productQuantity: 2,  orderStatus: "Cancelled",  paymentStatus: "Unpaid", totalAmount: 4500  },
-  { orderId: "ORD-1009", orderDate: "2026-03-08", deliveryDate: "2026-03-11", productQuantity: 9,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 31200 },
-  { orderId: "ORD-1010", orderDate: "2026-03-09", deliveryDate: "2026-03-12", productQuantity: 1,  orderStatus: "Pending",    paymentStatus: "Unpaid", totalAmount: 2900  },
-  { orderId: "ORD-1011", orderDate: "2026-03-10", deliveryDate: "2026-03-13", productQuantity: 4,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 13600 },
-  { orderId: "ORD-1012", orderDate: "2026-03-11", deliveryDate: "2026-03-14", productQuantity: 3,  orderStatus: "Delivered",  paymentStatus: "Paid",   totalAmount: 10200 },
-];
+const ALL_ORDER_DATA: OrderRecord[] = Object.values(ORDER_DATA_BY_STORE).flat() as OrderRecord[];
 
 const ROWS_PER_PAGE = 6;
 
@@ -175,14 +163,19 @@ export default function OrderReportModal({ open, onClose, stores = [] }: OrderRe
   const [selectedStore, setSelectedStore] = useState("All");
   const [page,          setPage]          = useState(1);
 
-  const filtered = useMemo(() => ORDER_DATA.filter(r => {
+  const storeData = useMemo((): OrderRecord[] => {
+    if (selectedStore === "All") return ALL_ORDER_DATA;
+    return ((ORDER_DATA_BY_STORE as Record<string, OrderRecord[]>)[selectedStore] ?? []);
+  }, [selectedStore]);
+
+  const filtered = useMemo(() => storeData.filter(r => {
     if (fromDate      && r.orderDate < fromDate)                                           return false;
     if (toDate        && r.orderDate > toDate)                                             return false;
     if (orderIdFilter && !r.orderId.toLowerCase().includes(orderIdFilter.toLowerCase()))   return false;
     if (orderStatus  !== "All" && r.orderStatus  !== orderStatus)                          return false;
     if (paymentStatus !== "All" && r.paymentStatus !== paymentStatus)                      return false;
     return true;
-  }), [fromDate, toDate, orderIdFilter, orderStatus, paymentStatus]);
+  }), [storeData, fromDate, toDate, orderIdFilter, orderStatus, paymentStatus]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
   const paginated  = filtered.slice((page - 1) * ROWS_PER_PAGE, page * ROWS_PER_PAGE);

@@ -20,6 +20,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 import { H3, H6, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
+import INVENTORY_DATA_BY_STORE from "data/inventoryData.json";
 
 // ─── Store option type ────────────────────────────────────────────────────────
 
@@ -40,20 +41,7 @@ interface InventoryRecord {
 
 const ROL_THRESHOLD = 25;
 
-const INVENTORY_DATA: InventoryRecord[] = [
-  { productId: "PRD-001", productName: "Wireless Headphones",  currentStock: 20, restockQty: 25, isLowStock: true  },
-  { productId: "PRD-002", productName: "USB-C Hub",            currentStock: 45, restockQty: 0,  isLowStock: false },
-  { productId: "PRD-003", productName: "Laptop Stand",         currentStock: 8,  restockQty: 25, isLowStock: true  },
-  { productId: "PRD-004", productName: "Mechanical Keyboard",  currentStock: 60, restockQty: 0,  isLowStock: false },
-  { productId: "PRD-005", productName: "Webcam HD 1080p",      currentStock: 12, restockQty: 25, isLowStock: true  },
-  { productId: "PRD-006", productName: "Bluetooth Speaker",    currentStock: 33, restockQty: 0,  isLowStock: false },
-  { productId: "PRD-007", productName: 'Monitor 27"',          currentStock: 5,  restockQty: 25, isLowStock: true  },
-  { productId: "PRD-008", productName: "Smart Watch",          currentStock: 72, restockQty: 0,  isLowStock: false },
-  { productId: "PRD-009", productName: "Phone Case Pack",      currentStock: 18, restockQty: 25, isLowStock: true  },
-  { productId: "PRD-010", productName: "Power Bank 20000mAh",  currentStock: 40, restockQty: 0,  isLowStock: false },
-  { productId: "PRD-011", productName: "HDMI Cable 2m",        currentStock: 3,  restockQty: 25, isLowStock: true  },
-  { productId: "PRD-012", productName: "Desk Lamp LED",        currentStock: 55, restockQty: 0,  isLowStock: false },
-];
+const ALL_INVENTORY_DATA: InventoryRecord[] = Object.values(INVENTORY_DATA_BY_STORE).flat() as InventoryRecord[];
 
 const ROWS_PER_PAGE = 6;
 
@@ -179,9 +167,14 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
     }
   }, [open, defaultFilter]);
 
+  const storeData = useMemo((): InventoryRecord[] => {
+    if (selectedStore === "All") return ALL_INVENTORY_DATA;
+    return ((INVENTORY_DATA_BY_STORE as Record<string, InventoryRecord[]>)[selectedStore] ?? []);
+  }, [selectedStore]);
+
   const filtered = useMemo(
     () =>
-      INVENTORY_DATA.filter((r) => {
+      storeData.filter((r) => {
         if (
           productIdFilter &&
           !r.productId.toLowerCase().includes(productIdFilter.toLowerCase()) &&
@@ -192,7 +185,7 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
         if (lowStockFilter === "N" && r.isLowStock)  return false;
         return true;
       }),
-    [productIdFilter, lowStockFilter]
+    [storeData, productIdFilter, lowStockFilter]
   );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));

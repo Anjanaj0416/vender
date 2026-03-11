@@ -1,0 +1,26 @@
+{
+  "store-001": [
+    { "orderId": "ORD-1001", "orderDate": "2026-03-01", "deliveryDate": "2026-03-03", "productQuantity": 4, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 12500 },
+    { "orderId": "ORD-1002", "orderDate": "2026-03-01", "deliveryDate": "2026-03-04", "productQuantity": 2, "orderStatus": "Pending",   "paymentStatus": "Unpaid", "totalAmount": 7800  },
+    { "orderId": "ORD-1003", "orderDate": "2026-03-02", "deliveryDate": "2026-03-05", "productQuantity": 7, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 21400 },
+    { "orderId": "ORD-1004", "orderDate": "2026-03-03", "deliveryDate": "2026-03-06", "productQuantity": 1, "orderStatus": "Cancelled", "paymentStatus": "Unpaid", "totalAmount": 3200  },
+    { "orderId": "ORD-1005", "orderDate": "2026-03-04", "deliveryDate": "2026-03-07", "productQuantity": 5, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 16900 },
+    { "orderId": "ORD-1006", "orderDate": "2026-03-05", "deliveryDate": "2026-03-08", "productQuantity": 3, "orderStatus": "Pending",   "paymentStatus": "Paid",   "totalAmount": 9600  }
+  ],
+  "store-002": [
+    { "orderId": "ORD-2001", "orderDate": "2026-03-01", "deliveryDate": "2026-03-03", "productQuantity": 3, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 8900  },
+    { "orderId": "ORD-2002", "orderDate": "2026-03-02", "deliveryDate": "2026-03-05", "productQuantity": 6, "orderStatus": "Pending",   "paymentStatus": "Unpaid", "totalAmount": 14200 },
+    { "orderId": "ORD-2003", "orderDate": "2026-03-03", "deliveryDate": "2026-03-06", "productQuantity": 2, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 6100  },
+    { "orderId": "ORD-2004", "orderDate": "2026-03-04", "deliveryDate": "2026-03-07", "productQuantity": 4, "orderStatus": "Cancelled", "paymentStatus": "Unpaid", "totalAmount": 5500  },
+    { "orderId": "ORD-2005", "orderDate": "2026-03-05", "deliveryDate": "2026-03-08", "productQuantity": 8, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 24600 },
+    { "orderId": "ORD-2006", "orderDate": "2026-03-06", "deliveryDate": "2026-03-09", "productQuantity": 1, "orderStatus": "Pending",   "paymentStatus": "Paid",   "totalAmount": 3400  }
+  ],
+  "store-003": [
+    { "orderId": "ORD-3001", "orderDate": "2026-03-01", "deliveryDate": "2026-03-04", "productQuantity": 2, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 5600  },
+    { "orderId": "ORD-3002", "orderDate": "2026-03-02", "deliveryDate": "2026-03-05", "productQuantity": 5, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 17300 },
+    { "orderId": "ORD-3003", "orderDate": "2026-03-03", "deliveryDate": "2026-03-06", "productQuantity": 1, "orderStatus": "Pending",   "paymentStatus": "Unpaid", "totalAmount": 2900  },
+    { "orderId": "ORD-3004", "orderDate": "2026-03-04", "deliveryDate": "2026-03-07", "productQuantity": 3, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 9800  },
+    { "orderId": "ORD-3005", "orderDate": "2026-03-05", "deliveryDate": "2026-03-08", "productQuantity": 7, "orderStatus": "Cancelled", "paymentStatus": "Unpaid", "totalAmount": 4200  },
+    { "orderId": "ORD-3006", "orderDate": "2026-03-06", "deliveryDate": "2026-03-09", "productQuantity": 4, "orderStatus": "Delivered", "paymentStatus": "Paid",   "totalAmount": 13100 }
+  ]
+}

@@ -37,6 +37,9 @@
       ],
       "pages-sections/*": [
         "./src/pages-sections/*"
+      ],
+      "data/*": [
+        "./src/data/*"
       ]
     },
     "baseUrl": "."

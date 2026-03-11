@@ -20,6 +20,7 @@ import Select from "@mui/material/Select";
 
 import { H3, H6, Paragraph, Small } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
+import SALES_DATA_BY_STORE from "data/salesData.json";
 
 // ─── Types & data ─────────────────────────────────────────────────────────────
 
@@ -31,15 +32,7 @@ interface SalesRecord {
   unitsSold: number;
 }
 
-const SALES_DATA: SalesRecord[] = [
-  { date: "01/03/2025", iso: "2025-03-01", totalSales: 5000, orders: 120, unitsSold: 150 },
-  { date: "02/03/2025", iso: "2025-03-02", totalSales: 4200, orders: 100, unitsSold: 130 },
-  { date: "03/03/2025", iso: "2025-03-03", totalSales: 6800, orders: 165, unitsSold: 210 },
-  { date: "04/03/2025", iso: "2025-03-04", totalSales: 3900, orders: 88,  unitsSold: 105 },
-  { date: "05/03/2025", iso: "2025-03-05", totalSales: 7200, orders: 182, unitsSold: 240 },
-  { date: "06/03/2025", iso: "2025-03-06", totalSales: 5500, orders: 134, unitsSold: 175 },
-  { date: "07/03/2025", iso: "2025-03-07", totalSales: 4800, orders: 115, unitsSold: 148 },
-];
+const ALL_SALES_DATA: SalesRecord[] = Object.values(SALES_DATA_BY_STORE).flat() as SalesRecord[];
 
 // ─── Store option type ────────────────────────────────────────────────────────
 
@@ -145,11 +138,16 @@ export default function SalesReportModal({ open, onClose, stores = [] }: SalesRe
   const [toDate,         setToDate]         = useState("");
   const [selectedStore,  setSelectedStore]  = useState("All");
 
-  const filtered = useMemo(() => SALES_DATA.filter(r => {
+  const storeData = useMemo((): SalesRecord[] => {
+    if (selectedStore === "All") return ALL_SALES_DATA;
+    return ((SALES_DATA_BY_STORE as Record<string, SalesRecord[]>)[selectedStore] ?? []);
+  }, [selectedStore]);
+
+  const filtered = useMemo(() => storeData.filter(r => {
     if (fromDate && r.iso < fromDate) return false;
     if (toDate   && r.iso > toDate)   return false;
     return true;
-  }), [fromDate, toDate]);
+  }), [storeData, fromDate, toDate]);
 
   const totalRevenue = filtered.reduce((s, r) => s + r.totalSales, 0);
   const totalOrders  = filtered.reduce((s, r) => s + r.orders, 0);
