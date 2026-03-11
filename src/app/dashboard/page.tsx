@@ -34,9 +34,10 @@ import { H3, H6, Paragraph, Small, Span } from "components/Typography";
 import { FlexBetween, FlexBox } from "components/flex-box";
 
 // ── Modal imports ─────────────────────────────────────────────────────────────
-import SalesReportModal     from "components/SalesReportModal";
-import OrderReportModal     from "components/OrderReportModal";
-import InventoryReportModal from "components/InventoryReportModal";
+import SalesReportModal         from "components/SalesReportModal";
+import OrderReportModal         from "components/OrderReportModal";
+import InventoryReportModal     from "components/InventoryReportModal";
+import PendingOrdersReportModal from "components/PendingOrdersReportModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -218,8 +219,9 @@ export default function DashboardPage() {
   const [salesModalOpen,     setSalesModalOpen]     = useState(false);
   const [orderModalOpen,     setOrderModalOpen]     = useState(false);
   // inventoryFilter: "All" → opened from totalStores, "Y" → opened from lowStockItems
-  const [inventoryModalOpen, setInventoryModalOpen] = useState(false);
-  const [inventoryFilter,    setInventoryFilter]    = useState<"All" | "Y">("All");
+  const [inventoryModalOpen,     setInventoryModalOpen]     = useState(false);
+  const [inventoryFilter,        setInventoryFilter]        = useState<"All" | "Y">("All");
+  const [pendingOrdersModalOpen, setPendingOrdersModalOpen] = useState(false);
 
   const vendorId = (session as any)?.vendorId ?? "";
 
@@ -308,6 +310,11 @@ export default function DashboardPage() {
         defaultFilter={inventoryFilter}
         stores={stores}
       />
+      <PendingOrdersReportModal
+        open={pendingOrdersModalOpen}
+        onClose={() => setPendingOrdersModalOpen(false)}
+        stores={stores}
+      />
 
       <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, md: 4 }, py: { xs: 3, md: 5 } }}>
 
@@ -383,9 +390,11 @@ export default function DashboardPage() {
                         : config.key === "totalOrders"
                         ? () => setOrderModalOpen(true)
                         : config.key === "totalStores"
-                        ? () => openInventory("All")   // all products
+                        ? () => openInventory("All")
                         : config.key === "lowStockItems"
-                        ? () => openInventory("Y")     // low stock only
+                        ? () => openInventory("Y")
+                        : config.key === "pendingOrders"
+                        ? () => setPendingOrdersModalOpen(true)
                         : undefined
                     }
                   />

@@ -192,7 +192,7 @@ export default function SalesReportModal({ open, onClose, stores = [] }: SalesRe
             <FlexBox alignItems="center" gap={1.5}>
               <Chip
                 label={`${filtered.length} Daily Records`}
-                sx={{ bgcolor: "#fff0f0", color: "#c0392b", border: "1.5px solid #c0392b", fontWeight: 700, fontSize: 12, borderRadius: "20px", height: 32 }}
+                sx={{ bgcolor: "rgba(37,99,235,0.08)", color: "#2563eb", border: "1.5px solid #2563eb", fontWeight: 700, fontSize: 12, borderRadius: "20px", height: 32 }}
               />
               <IconButton onClick={onClose} size="small" sx={{ border: "1.5px solid", borderColor: "divider", borderRadius: 2, "&:hover": { borderColor: "error.main", color: "error.main" } }}>
                 <CloseIcon fontSize="small" />
@@ -266,15 +266,15 @@ export default function SalesReportModal({ open, onClose, stores = [] }: SalesRe
           {/* KPI cards */}
           <Grid container spacing={2} mb={3}>
             {[
-              { label: "Total Revenue",  value: `$${totalRevenue.toLocaleString()}`, sub: `Combined sales for ${filtered.length} days` },
-              { label: "Total Orders",   value: totalOrders.toLocaleString(),         sub: "All completed and pending sales" },
-              { label: "Units Sold",     value: totalUnits.toLocaleString(),          sub: "Across all tracked products" },
-              { label: "Best Sales Day", value: bestDay ? bestDay.date.slice(0, 5) : "—", sub: bestDay ? `$${bestDay.totalSales.toLocaleString()} highest revenue` : "No data" },
-            ].map(({ label, value, sub }) => (
+              { label: "Total Revenue",  value: `$${totalRevenue.toLocaleString()}`, sub: `Combined sales for ${filtered.length} days`, color: "#c0392b" },
+              { label: "Total Orders",   value: totalOrders.toLocaleString(),         sub: "All completed and pending sales",           color: "#2563eb" },
+              { label: "Units Sold",     value: totalUnits.toLocaleString(),          sub: "Across all tracked products",               color: "#16a34a" },
+              { label: "Best Sales Day", value: bestDay ? bestDay.date.slice(0, 5) : "—", sub: bestDay ? `$${bestDay.totalSales.toLocaleString()} highest revenue` : "No data", color: "#7c3aed" },
+            ].map(({ label, value, sub, color }) => (
               <Grid item xs={6} sm={3} key={label}>
                 <Card sx={{ p: 2.5, borderRadius: 3, border: "1.5px solid", borderColor: "divider", boxShadow: "none" }}>
                   <Small color="text.secondary" sx={{ fontSize: 11, fontWeight: 600, display: "block", mb: 0.75 }}>{label}</Small>
-                  <Box sx={{ fontSize: 22, fontWeight: 900, color: "#c0392b", lineHeight: 1.1, mb: 0.5 }}>{value}</Box>
+                  <Box sx={{ fontSize: 22, fontWeight: 900, color, lineHeight: 1.1, mb: 0.5 }}>{value}</Box>
                   <Small color="text.disabled" sx={{ fontSize: 11 }}>{sub}</Small>
                 </Card>
               </Grid>

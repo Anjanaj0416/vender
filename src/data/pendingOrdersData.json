@@ -1,0 +1,23 @@
+{
+  "store-001": [
+    { "orderId": "ORD-1002", "orderDate": "2026-03-01", "customerName": "John Silva",    "shippingAddress": "123 Main St, Colombo 03",     "productId": "PRD-004", "productName": "Wireless Headphones",  "quantitySold": 2, "unitPrice": 3900,  "totalAmount": 7800,  "shippingMethod": "Standard" },
+    { "orderId": "ORD-1006", "orderDate": "2026-03-05", "customerName": "Priya Fernando","shippingAddress": "45 Lake Rd, Kandy 20000",      "productId": "PRD-007", "productName": "USB-C Hub 7-Port",     "quantitySold": 3, "unitPrice": 3200,  "totalAmount": 9600,  "shippingMethod": "Express" },
+    { "orderId": "ORD-1009", "orderDate": "2026-03-06", "customerName": "Nimal Perera",  "shippingAddress": "78 Galle Rd, Negombo 11500",  "productId": "PRD-002", "productName": "Laptop Stand Pro",    "quantitySold": 1, "unitPrice": 4500,  "totalAmount": 4500,  "shippingMethod": "Standard" },
+    { "orderId": "ORD-1012", "orderDate": "2026-03-07", "customerName": "Amara De Silva","shippingAddress": "22 Temple St, Galle 80000",   "productId": "PRD-011", "productName": "Mechanical Keyboard", "quantitySold": 1, "unitPrice": 8750,  "totalAmount": 8750,  "shippingMethod": "Express" },
+    { "orderId": "ORD-1015", "orderDate": "2026-03-08", "customerName": "Kasun Jayawardena","shippingAddress": "9 Hill St, Nuwara Eliya 22200","productId": "PRD-005", "productName": "Portable SSD 1TB",  "quantitySold": 2, "unitPrice": 6900,  "totalAmount": 13800, "shippingMethod": "Standard" },
+    { "orderId": "ORD-1018", "orderDate": "2026-03-09", "customerName": "Dilani Wickrama","shippingAddress": "55 Beach Ave, Beruwala 12070","productId": "PRD-009", "productName": "Smart Watch Band",   "quantitySold": 4, "unitPrice": 1200,  "totalAmount": 4800,  "shippingMethod": "Economy" }
+  ],
+  "store-002": [
+    { "orderId": "ORD-2002", "orderDate": "2026-03-02", "customerName": "Ravi Kumar",    "shippingAddress": "10 Park Ave, Colombo 07",     "productId": "PRD-003", "productName": "Bluetooth Speaker",   "quantitySold": 6, "unitPrice": 2367,  "totalAmount": 14200, "shippingMethod": "Standard" },
+    { "orderId": "ORD-2006", "orderDate": "2026-03-06", "customerName": "Sasha Gunasekara","shippingAddress": "33 River Rd, Matara 81000", "productId": "PRD-008", "productName": "Webcam HD 1080p",     "quantitySold": 1, "unitPrice": 3400,  "totalAmount": 3400,  "shippingMethod": "Express" },
+    { "orderId": "ORD-2010", "orderDate": "2026-03-07", "customerName": "Thilak Bandara","shippingAddress": "66 Canal St, Kurunegala 60000","productId": "PRD-006", "productName": "LED Desk Lamp",      "quantitySold": 2, "unitPrice": 2150,  "totalAmount": 4300,  "shippingMethod": "Standard" },
+    { "orderId": "ORD-2013", "orderDate": "2026-03-08", "customerName": "Minoli Rathnayake","shippingAddress": "14 Fort Rd, Trincomalee 31000","productId": "PRD-012","productName": "Mouse Pad XL",    "quantitySold": 5, "unitPrice": 890,   "totalAmount": 4450,  "shippingMethod": "Economy" },
+    { "orderId": "ORD-2016", "orderDate": "2026-03-09", "customerName": "Chamara Liyanage","shippingAddress": "88 School Ln, Batticaloa 30000","productId": "PRD-001","productName": "Smart Hub Mini", "quantitySold": 1, "unitPrice": 5600,  "totalAmount": 5600,  "shippingMethod": "Express" }
+  ],
+  "store-003": [
+    { "orderId": "ORD-3003", "orderDate": "2026-03-03", "customerName": "Iresha Samarasinghe","shippingAddress": "27 Sunset Blvd, Jaffna 40000","productId": "PRD-010","productName": "Power Bank 20000mAh","quantitySold": 1,"unitPrice": 2900,"totalAmount": 2900,"shippingMethod": "Standard" },
+    { "orderId": "ORD-3007", "orderDate": "2026-03-06", "customerName": "Lasith Mendis",  "shippingAddress": "3 Coral Rd, Hikkaduwa 17000", "productId": "PRD-014", "productName": "Cable Management Kit","quantitySold": 3,"unitPrice": 750,   "totalAmount": 2250,  "shippingMethod": "Economy" },
+    { "orderId": "ORD-3011", "orderDate": "2026-03-08", "customerName": "Nadeesha Wijesuriya","shippingAddress": "50 Mahinda Pl, Hambantota 82000","productId": "PRD-002","productName": "Laptop Stand Pro","quantitySold": 2,"unitPrice": 4500,"totalAmount": 9000,"shippingMethod": "Express" },
+    { "orderId": "ORD-3014", "orderDate": "2026-03-09", "customerName": "Ruwan Senanayake","shippingAddress": "18 Garden Rd, Polonnaruwa 51000","productId": "PRD-015","productName": "Ergonomic Wrist Rest","quantitySold": 4,"unitPrice": 650,"totalAmount": 2600,"shippingMethod": "Standard" }
+  ]
+}

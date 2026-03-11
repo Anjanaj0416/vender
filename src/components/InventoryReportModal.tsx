@@ -197,9 +197,7 @@ const InventoryReportModal: React.FC<InventoryReportModalProps> = ({
   const isLowStockView    = defaultFilter === "Y";
   const modalTitle        = isLowStockView ? "Low Stock Report" : "Inventory Report";
   const chipLabel         = isLowStockView ? `${lowCount} Low Stock` : `${filtered.length} Products`;
-  const chipSx            = isLowStockView
-    ? { bgcolor: "rgba(220,38,38,0.08)", color: "#dc2626", border: "1.5px solid #dc2626" }
-    : { bgcolor: "rgba(37,99,235,0.08)", color: "#2563eb", border: "1.5px solid #2563eb" };
+  const chipSx            = { bgcolor: "rgba(37,99,235,0.08)", color: "#2563eb", border: "1.5px solid #2563eb" };
   const selectedStoreName = selectedStore === "All"
     ? "All Stores"
     : stores.find(s => s.storeUuid === selectedStore)?.storeName ?? "All Stores";
