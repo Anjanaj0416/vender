@@ -1,0 +1,40 @@
+{
+  "store-001": [
+    { "orderId": "ORD-1001", "customerId": "CUST-201", "productName": "Wireless Headphones",     "quantity": 2, "orderDate": "2025-03-01", "cancellationDate": "2025-03-02" },
+    { "orderId": "ORD-1002", "customerId": "CUST-204", "productName": "USB-C Hub",               "quantity": 1, "orderDate": "2025-03-01", "cancellationDate": "2025-03-02" },
+    { "orderId": "ORD-1003", "customerId": "CUST-207", "productName": "Mechanical Keyboard",     "quantity": 1, "orderDate": "2025-03-02", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-1004", "customerId": "CUST-210", "productName": "Gaming Mouse",            "quantity": 3, "orderDate": "2025-03-02", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-1005", "customerId": "CUST-213", "productName": "Monitor Stand",           "quantity": 1, "orderDate": "2025-03-03", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-1006", "customerId": "CUST-216", "productName": "Webcam HD 1080p",         "quantity": 2, "orderDate": "2025-03-03", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-1007", "customerId": "CUST-219", "productName": "Laptop Cooling Pad",      "quantity": 1, "orderDate": "2025-03-04", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-1008", "customerId": "CUST-222", "productName": "Bluetooth Speaker",       "quantity": 2, "orderDate": "2025-03-04", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-1009", "customerId": "CUST-225", "productName": "Smart Watch Band",        "quantity": 4, "orderDate": "2025-03-05", "cancellationDate": "2025-03-06" },
+    { "orderId": "ORD-1010", "customerId": "CUST-201", "productName": "Portable Charger 20000mAh","quantity": 1, "orderDate": "2025-03-05", "cancellationDate": "2025-03-06" },
+    { "orderId": "ORD-1011", "customerId": "CUST-228", "productName": "Wireless Headphones",     "quantity": 1, "orderDate": "2025-03-06", "cancellationDate": "2025-03-07" },
+    { "orderId": "ORD-1012", "customerId": "CUST-231", "productName": "USB-C Hub",               "quantity": 2, "orderDate": "2025-03-06", "cancellationDate": "2025-03-07" }
+  ],
+  "store-002": [
+    { "orderId": "ORD-2001", "customerId": "CUST-301", "productName": "Office Chair Cushion",    "quantity": 1, "orderDate": "2025-03-01", "cancellationDate": "2025-03-02" },
+    { "orderId": "ORD-2002", "customerId": "CUST-304", "productName": "Desk Organizer Set",      "quantity": 2, "orderDate": "2025-03-01", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-2003", "customerId": "CUST-307", "productName": "Ergonomic Mouse Pad",     "quantity": 3, "orderDate": "2025-03-02", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-2004", "customerId": "CUST-310", "productName": "LED Desk Lamp",           "quantity": 1, "orderDate": "2025-03-02", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-2005", "customerId": "CUST-313", "productName": "Cable Management Kit",   "quantity": 2, "orderDate": "2025-03-03", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-2006", "customerId": "CUST-316", "productName": "Noise-Cancelling Earbuds","quantity": 1, "orderDate": "2025-03-03", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-2007", "customerId": "CUST-319", "productName": "Laptop Sleeve 15 inch",  "quantity": 2, "orderDate": "2025-03-04", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-2008", "customerId": "CUST-322", "productName": "Screen Cleaning Kit",     "quantity": 5, "orderDate": "2025-03-05", "cancellationDate": "2025-03-06" },
+    { "orderId": "ORD-2009", "customerId": "CUST-325", "productName": "Mechanical Keyboard",     "quantity": 1, "orderDate": "2025-03-06", "cancellationDate": "2025-03-07" },
+    { "orderId": "ORD-2010", "customerId": "CUST-301", "productName": "LED Desk Lamp",           "quantity": 1, "orderDate": "2025-03-07", "cancellationDate": "2025-03-07" }
+  ],
+  "store-003": [
+    { "orderId": "ORD-3001", "customerId": "CUST-401", "productName": "Smart Home Hub",          "quantity": 1, "orderDate": "2025-03-01", "cancellationDate": "2025-03-02" },
+    { "orderId": "ORD-3002", "customerId": "CUST-404", "productName": "Wi-Fi Range Extender",    "quantity": 2, "orderDate": "2025-03-01", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-3003", "customerId": "CUST-407", "productName": "Action Camera Mount",     "quantity": 3, "orderDate": "2025-03-02", "cancellationDate": "2025-03-03" },
+    { "orderId": "ORD-3004", "customerId": "CUST-410", "productName": "Tripod Flexible Mini",    "quantity": 1, "orderDate": "2025-03-02", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-3005", "customerId": "CUST-413", "productName": "Wireless Gamepad",        "quantity": 2, "orderDate": "2025-03-03", "cancellationDate": "2025-03-04" },
+    { "orderId": "ORD-3006", "customerId": "CUST-416", "productName": "HDMI Cable 2m",           "quantity": 4, "orderDate": "2025-03-04", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-3007", "customerId": "CUST-419", "productName": "Smart Watch Band",        "quantity": 1, "orderDate": "2025-03-04", "cancellationDate": "2025-03-05" },
+    { "orderId": "ORD-3008", "customerId": "CUST-422", "productName": "Portable SSD 1TB",        "quantity": 1, "orderDate": "2025-03-05", "cancellationDate": "2025-03-06" },
+    { "orderId": "ORD-3009", "customerId": "CUST-425", "productName": "Smart Home Hub",          "quantity": 2, "orderDate": "2025-03-06", "cancellationDate": "2025-03-07" },
+    { "orderId": "ORD-3010", "customerId": "CUST-401", "productName": "Wi-Fi Range Extender",    "quantity": 1, "orderDate": "2025-03-07", "cancellationDate": "2025-03-07" }
+  ]
+}

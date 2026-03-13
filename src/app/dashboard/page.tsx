@@ -18,7 +18,7 @@ import IconButton from "@mui/material/IconButton";
 // MUI Icons
 import StorefrontIcon from "@mui/icons-material/Storefront";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import CancelIcon from "@mui/icons-material/Cancel";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
 import InventoryIcon from "@mui/icons-material/Inventory";
@@ -38,14 +38,15 @@ import SalesReportModal         from "components/SalesReportModal";
 import OrderReportModal         from "components/OrderReportModal";
 import InventoryReportModal     from "components/InventoryReportModal";
 import PendingOrdersReportModal from "components/PendingOrdersReportModal";
-import CustomersReportModal     from "components/CustomersReportModal";
+import CustomersReportModal          from "components/CustomersReportModal";
+import CancelledOrdersReportModal   from "components/CancelledOrdersReportModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DashboardStats {
   totalSales: number;
   totalOrders: number;
-  totalRevenue: number;
+  cancelledOrders: number;
   totalStores: number;
   pendingOrders: number;
   lowStockItems: number;
@@ -68,7 +69,7 @@ interface KpiConfig {
 const KPI_CARDS: KpiConfig[] = [
   { key: "totalSales",     label: "Total Sales",     Icon: TrendingUpIcon,       color: "#c0392b", bgColor: "rgba(192,57,43,0.08)",  format: "number" },
   { key: "totalOrders",    label: "Total Orders",    Icon: ShoppingCartIcon,     color: "#2563eb", bgColor: "rgba(37,99,235,0.08)",  format: "count" },
-  { key: "totalRevenue",   label: "Total Revenue",   Icon: AttachMoneyIcon,      color: "#16a34a", bgColor: "rgba(22,163,74,0.08)",  format: "currency" },
+  { key: "cancelledOrders", label: "Cancelled Orders", Icon: CancelIcon,           color: "#dc2626", bgColor: "rgba(220,38,38,0.08)",  format: "count", highlight: "danger" },
   { key: "totalStores",    label: "Total Stores",    Icon: StorefrontIcon,       color: "#7c3aed", bgColor: "rgba(124,58,237,0.08)", format: "count" },
   { key: "pendingOrders",  label: "Pending Orders",  Icon: PendingActionsIcon,   color: "#d97706", bgColor: "rgba(217,119,6,0.08)",  format: "count", highlight: "warning" },
   { key: "lowStockItems",  label: "Low Stock Items", Icon: InventoryIcon,        color: "#dc2626", bgColor: "rgba(220,38,38,0.08)",  format: "count", highlight: "danger" },
@@ -223,7 +224,8 @@ export default function DashboardPage() {
   const [inventoryModalOpen,     setInventoryModalOpen]     = useState(false);
   const [inventoryFilter,        setInventoryFilter]        = useState<"All" | "Y">("All");
   const [pendingOrdersModalOpen, setPendingOrdersModalOpen] = useState(false);
-  const [customersModalOpen,     setCustomersModalOpen]     = useState(false);
+  const [customersModalOpen,         setCustomersModalOpen]         = useState(false);
+  const [cancelledOrdersModalOpen,   setCancelledOrdersModalOpen]   = useState(false);
 
   const vendorId = (session as any)?.vendorId ?? "";
 
@@ -262,7 +264,7 @@ export default function DashboardPage() {
       setStats({
         totalSales:     raw.totalSales     ?? 0,
         totalOrders:    raw.totalOrders    ?? 0,
-        totalRevenue:   raw.totalRevenue   ?? 0,
+        cancelledOrders: raw.cancelledOrders ?? 0,
         totalStores:    raw.totalStores    ?? 0,
         pendingOrders:  raw.pendingOrders  ?? 0,
         lowStockItems:  raw.lowStockItems  ?? 0,
@@ -320,6 +322,11 @@ export default function DashboardPage() {
       <CustomersReportModal
         open={customersModalOpen}
         onClose={() => setCustomersModalOpen(false)}
+        stores={stores}
+      />
+      <CancelledOrdersReportModal
+        open={cancelledOrdersModalOpen}
+        onClose={() => setCancelledOrdersModalOpen(false)}
         stores={stores}
       />
 
@@ -404,6 +411,8 @@ export default function DashboardPage() {
                         ? () => setPendingOrdersModalOpen(true)
                         : config.key === "totalCustomers"
                         ? () => setCustomersModalOpen(true)
+                        : config.key === "cancelledOrders"
+                        ? () => setCancelledOrdersModalOpen(true)
                         : undefined
                     }
                   />
